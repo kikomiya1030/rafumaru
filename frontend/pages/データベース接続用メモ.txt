@@ -1,0 +1,7 @@
+from sqlalchemy import text
+text関数を使って実行しないとSQLのエラーが発生する。
+
+mysqlclient = 2.1.1
+このバージョンより上のバージョンを使うとstreamlitのSSL接続が必須になってしまうためバージョンを下げて実行すること。
+
+values()の中の値はそれぞれシングルクォーテーションにくくらないとエラーが発生する。
