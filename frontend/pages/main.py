@@ -117,7 +117,7 @@ if st.session_state["user_id"] is not None:
             else:
                 # Pie インスタンスを作成してグラフを表示
                 pie = Pie()
-                pie.create_chart(data, unique_key="unique_key", height=350)
+                pie.create_chart(data, unique_key="unique_key", height=300)
 
         col_6, col_7, col_8 = st.columns([6, 3, 5]) # ボタンの位置設定
         with col_7 :
@@ -126,6 +126,7 @@ if st.session_state["user_id"] is not None:
                 pass
             else:
                 if st.button("詳細"):
+                    st.session_state["calendar"] = False
                     st.switch_page("pages/account_book_detail.py") 
 
     # 収支入力フォーム
@@ -154,7 +155,7 @@ if st.session_state["user_id"] is not None:
                 label="カテゴリ",
                 options=categorys,
                 format_func=lambda x: x[0],
-                key="category",
+                key="category"
             )
             # メモ入力
             memo = st.text_area('メモ', value=None)

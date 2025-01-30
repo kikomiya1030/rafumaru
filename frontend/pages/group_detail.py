@@ -1,6 +1,8 @@
 import datetime
 import streamlit as st
+import streamlit_calendar as st_calendar
 import socket
+import random
 
 from items.hide_default_header import hide_header
 from items.create_header import create_header
@@ -35,6 +37,8 @@ if "today" not in st.session_state:
     st.session_state["today"] = datetime.today().date()
 if "filter" not in st.session_state:
     st.session_state["filter"] = False
+if "gp_calendar" not in st.session_state:
+    st.session_state["gp_calendar"] = False
 
 # パス設定
 if "path" not in st.session_state:
@@ -46,17 +50,37 @@ if "path" not in st.session_state:
 if "user_id" not in st.session_state:
     st.switch_page("pages/main.py")
 
+# ランダムカラー
+def get_random_color():
+    colors = [
+        "#66FFFF", # akiyama
+        "#6666FF", # nozawa
+        "#33FF99", # sotokawa
+        "#FF9999",
+        "#FFCC00",
+        "#66CC66",
+        "#6699FF",
+        "#FF66CC",
+        "#FF6600",
+        "#9966FF",
+        "#CCCCCC",
+        "#FFCCFF",
+        
+    ]
+    return random.choice(colors)
+
 col_A, col_B = st.columns([1,20])
 with col_A:
     if st.button("⬅︎", key="back"):
         st.session_state["filter"] = False
         st.session_state["invite"] = False
+        st.session_state["gp_calendar"] = False
         st.switch_page("pages/group_main.py")
 with col_B:
     st.subheader(group_name) 
 
 # ページタイトル
-colA, colB, colC, colD1, colD2, colD3 = st.columns([1, 4.5, 3, 5.5, 1, 1.5])
+colA, colB, colC, colC2, colD1, colD2, colD3 = st.columns([1, 4.5, 0.8, 3, 5.5, 1, 1.5])
 with colA:
     last_month = st.button("◀") # 前月
     if last_month:
@@ -86,6 +110,18 @@ with colC:
         st.session_state["month"] = month
         st.rerun()
 
+# カレンダーボタン
+with colC2:
+    gp_calendar_btn = st.button("📅")
+    if gp_calendar_btn and st.session_state["gp_calendar"] == True:
+        st.session_state["gp_calendar"] = False
+        st.switch_page("pages/group_detail.py")
+    elif gp_calendar_btn and st.session_state["gp_calendar"] == False:
+        st.session_state["gp_calendar"] = True
+        st.switch_page("pages/group_detail.py")
+    else:
+        pass
+
 # 検索欄
 with colD1:
     date_search = st.date_input('日付から詳細検索', value=st.session_state["today"])
@@ -104,6 +140,7 @@ with colD3:
     close_button = st.button('クリア')
     if close_button:
         st.session_state["filter"] = False
+        st.session_state["gp_calendar"] = False
 
 
 # メイン画面分割
@@ -114,6 +151,14 @@ response = requests.post(url, json={"group_id": group_id, "user_id": user_id, "y
 data = response.json()
 weekly_data = data.get('weekly_data', {})
 weekly_totals = data.get('weekly_totals', {})
+
+# カレンダー用カラー設定
+if "random_colors" not in st.session_state:
+    st.session_state["random_colors"] = {}
+
+    for week_num in weekly_data:
+        for item in weekly_data[week_num]:
+            st.session_state["random_colors"][item["date"]] = get_random_color()
 
 # 週の詳細表示
 cols = [col2, col3, col4, col5, col6]
@@ -143,6 +188,35 @@ if st.session_state["filter"]:
                                 st.write(f"{item.get('memo')}")
                             st.markdown('---')
                         st.caption(f"**{date_search.isoformat()}**")
+
+# カレンダー表示画面
+elif st.session_state["gp_calendar"]:
+    col2, col3, col4 = st.columns([1,10,1])
+    with col3:
+        # カレンダーの設定
+        selected_date = datetime.date(st.session_state["year"], st.session_state["month"], 1)
+
+        events = []
+
+        for week_num in weekly_data:
+            for item in weekly_data[week_num]:
+                event = {
+                    "title": f"{item.get('nickname')}：{item.get('category_name')}　¥{item.get('amount'):,}",
+                    "start": item.get('date'),
+                    "backgroundColor": st.session_state["random_colors"].get(item["date"], "#66CC66"),
+                }
+                events.append(event)
+        
+        options={
+            "initialDate": selected_date.isoformat(),
+            'locale': 'ja', # 日本語に変更
+            "headerToolbar": False, # 日付選択ボタンの表示を取り消す
+            "editable": False,
+            "events": events,
+            "dayMaxEventRows": True,
+            }
+        
+        st_calendar.calendar(options=options)
 
 else:
     if response.status_code == 200:

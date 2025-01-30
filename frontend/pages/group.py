@@ -55,7 +55,7 @@ if "user_id" in st.session_state:
     # 項目名の設定
     colA, colB, colC = st.columns([8, 1, 3]) 
     with colA:
-        col, col_a, col_b, col_c = st.columns([2, 4, 2, 2])
+        col, col_a, col_b, col_c = st.columns([1, 3, 1, 1])
         with col:
             st.write("ID")
             st.markdown("---")
@@ -81,7 +81,7 @@ if "user_id" in st.session_state:
                 modal = Modal("グループ削除確認", key=f"delete_modal_{group_id}")
 
                 with st.container(key=f"group_form_{group_id}"):
-                    col, col_1, col_2, col_3 = st.columns([2, 4, 2, 2])
+                    col, col_1, col_2, col_3 = st.columns([1, 3, 1, 1])
 
                     with col:
                         group_id_str = str(group_id)
@@ -147,21 +147,21 @@ if "user_id" in st.session_state:
             with st.form(key="create_delete_form"):
                 st.text("") # 空白の調整
                 # グループ作成
-                submit_btn_create = st.form_submit_button("作成", use_container_width=True)
+                submit_btn_create = st.form_submit_button("グループ作成", use_container_width=True)
                 if submit_btn_create:
                     st.switch_page("pages/group_create.py")
 
                 st.text("") # 空白の調整
                 
                 # グループ加入
-                submit_btn_join = st.form_submit_button("加入", use_container_width=True)
+                submit_btn_join = st.form_submit_button("グループ加入", use_container_width=True)
                 if submit_btn_join:
                     st.switch_page("pages/group_join.py")
                 
                 st.text("")
 
                 # 項目の一つ一つの削除ボタンを表示する
-                submit_btn_delete = st.form_submit_button("削除", use_container_width=True)
+                submit_btn_delete = st.form_submit_button("グループ削除", use_container_width=True)
                 if submit_btn_delete:
                     st.session_state["show_confirm_delete"] = True
                     st.switch_page("pages/group.py")

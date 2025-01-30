@@ -15,7 +15,7 @@ submit_btn = False
 col_1, col_2, col_3 = st.columns([1, 8, 1])
 
 # ユーザーIDと認証コードを取得
-user_id = st.session_state.get("userid")
+pass_user_id = st.session_state.get("pass_user_id")
 
 with col_1:
     pass
@@ -71,7 +71,7 @@ with col_2:
                 else:
                     path = st.session_state["path"]
                     reset_url = f"http://{path}:8000/api/new_pw/" # ローカル
-                    response = requests.post(reset_url, json={"user_id": user_id, "new_pass": new_pass})
+                    response = requests.post(reset_url, json={"user_id": pass_user_id, "new_pass": new_pass})
 
                     if response.status_code == 200: # リクエスト成功
                         message.success("パスワードリセットしました！")

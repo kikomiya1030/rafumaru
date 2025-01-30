@@ -34,6 +34,9 @@ path = st.session_state["path"]
 colA, colB = st.columns([1,20])
 with colA:
     if st.button("⬅︎", key="back"):
+        st.session_state["myself"] = False
+        st.session_state["selected_date"] = None
+        st.session_state["selected_prefecture"] = None
         st.switch_page("pages/share_all.py")
 with colB:
     st.subheader("公開情報設定")
@@ -86,7 +89,7 @@ weeks_data = []
 has_valid_data = False # ボタン表示設定
 
 with st.container(border=True):
-    cola, colb, colc = st.columns([1,2,3])
+    cola, colb, colc = st.columns([1,1,3])
     with cola:
         st.write("公開状態")
     with colb:
@@ -96,9 +99,16 @@ with st.container(border=True):
 
     day1 = 1
     day2 = 7
+
+    # 都道府県を取得
+    prefecture_url = f"http://{path}:8000/api/get_prefecture/"
+    prefecture_response = requests.post(prefecture_url)
+    prefectures_data = prefecture_response.json()
+    prefectures =  [(prefecture["prefecture_name"], prefecture["prefecture_id"]) for prefecture in prefectures_data]
+
     for week_num in range(1, 6):
-        col_left, col_mid, col_right = st.columns([1, 2, 3])
-        week_entry = {"week": week_num, "public": False, "title": ""}
+        col_left, col_mid, col_right1, col_right2 = st.columns([1, 1, 1, 2])
+        week_entry = {"week": week_num, "public": False, "prefecture_id": None ,"title": ""}
 
         public_status_url = f"http://{path}:8000/api/public_status/"
         public_status_response = requests.post(public_status_url, json={"user_id": user_id, "year": current_year, "month": current_month, "week": week_num})
@@ -106,6 +116,7 @@ with st.container(border=True):
         public_status = status.get("status", "Error")
         title = status.get("title", "")
         public = status.get("public", False)
+        prefecture_id = status.get("prefecture_id", 48)
         
         # 公開状態確認
         with col_left:
@@ -148,8 +159,21 @@ with st.container(border=True):
             day1+=7
             day2+=7
 
+        with col_right1:
+            if public:
+                default_index = next((i for i, (_, pre_id) in enumerate(prefectures) if pre_id == prefecture_id), 48) # デフォルト値設定
+                
+                selected_prefecture_name, selected_prefecture_id = st.selectbox(
+                label="都道府県",
+                options=prefectures,
+                format_func=lambda x: x[0],
+                key=f"prefecture{week_num}",
+                index=default_index if default_index is not None else 48,
+                )
+                week_entry["prefecture_id"] = selected_prefecture_id
+
         # チェックされた場合、右側にタイトル入力欄を表示
-        with col_right:
+        with col_right2:
             if public:
                 title_input = st.text_input('タイトル入力', key=f"input{week_num}", value=title)
                 week_entry["title"] = title_input
@@ -174,6 +198,7 @@ if has_valid_data:
                         "week": entry["week"],
                         "public": "true" if entry["public"] else "false",
                         "title": entry["title"],
+                        "prefecture_id": entry["prefecture_id"],
                     }
                 )
             if response.status_code == 200:

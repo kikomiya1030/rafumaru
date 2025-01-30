@@ -4,7 +4,7 @@ from django.http import HttpRequest
 from . import models
 from .serializers import UserSerializer
 
-from .models import User, Category, Accountbook, Gp, Member, Shareaccountbook, Public, Comment, Notice
+from .models import User, Category, Accountbook, Gp, Member, Shareaccountbook, Public, Comment, Notice, Prefectures
 from django.db.models import Sum, Case, When, IntegerField, F
 from django.utils import timezone
 from datetime import datetime, date
@@ -20,6 +20,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth import authenticate, login
 
 from math import isnan, isinf
+import re
 
 
 # ユーザーログイン
@@ -101,7 +102,11 @@ def password_reset(request):
 
     try:
         user = User.objects.get(user_id=user_id)
-        email = user.mail_address #メールアドレスを取得する
+
+        if not User.objects.filter(user_id=user_id).exists():
+            return Response({"error": "User does not exist"}, status=404)
+        
+        email = user.mail_address # メールアドレスを取得する
 
         subject = "[らふまる]認証コード"
         body = f"""
@@ -111,11 +116,11 @@ def password_reset(request):
         """
         from_email = settings.DEFAULT_FROM_EMAIL
         to_email = [email]
-        bcc = ["ykh2335022@stu.o-hara.ac.jp"]
-        email = EmailMessage(subject, body, from_email, to_email, bcc=bcc)
+        email = EmailMessage(subject, body, from_email, to_email,)
         email.content_subtype = 'html'  # HTMLメールとして設定
         email.send()
         print(f"Received email: {email}")
+        print(code)
         
         request.session['user_id'] = user_id
         request.session['code'] = code
@@ -123,7 +128,7 @@ def password_reset(request):
         return Response({"code": code, "user_id": user_id}, status=200)
     
     except User.DoesNotExist:
-        return Response({"code": code, "user_id": user_id}, status=400)
+        return Response(status=400)
 
 
 # 認証コード確認
@@ -151,6 +156,9 @@ def new_pw(request):
     user_id = request.data.get('user_id')
     new_pass = request.data.get('new_pass') # Streamlitからパスワードを取得する
 
+    print(user_id)
+    print(new_pass)
+
     try:
         user = User.objects.get(user_id=user_id)
         hashed_password = make_password(new_pass)
@@ -168,6 +176,10 @@ def delete_account(request):
     user_id = request.data.get('user_id')
 
     try:
+        # 通知
+        notice_delete = Notice.objects.filter(re_user_id=user_id)
+        notice_delete.delete()
+
         # 個人家計簿
         account_book_delete = Accountbook.objects.filter(user_id=user_id)
 
@@ -175,7 +187,6 @@ def delete_account(request):
         public_delete = Public.objects.filter(public_id__in=account_book_delete.values_list('public_no', flat=True))
         public_delete.delete()
         account_book_delete.delete()
-
 
         # コメント
         Comment.objects.filter(user_id=user_id).delete()
@@ -191,7 +202,6 @@ def delete_account(request):
         member_delete.delete()
 
         share_account_book_delete = Shareaccountbook.objects.filter(user_id=user_id)
-        print(share_account_book_delete)
         share_account_book_delete.delete()
 
         user_delete = User.objects.get(user_id=user_id)
@@ -207,6 +217,24 @@ def delete_account(request):
         print(f"An error occurred: {e}")
         return Response({"error": f"An unexpected error occurred: {e}"}, status=500)
 
+# 個人情報修正
+@api_view(['GET', "POST"])
+def rev_account(request):
+    user_id = request.data.get('user_id')
+    nickname = request.data.get('nickname')
+    email = request.data.get('email')
+
+    try:
+        user_info = User.objects.get(user_id=user_id)
+        user_info.nickname = nickname
+        user_info.mail_address = email
+        user_info.save()
+
+        return Response(status=200)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return Response({"error": f"An unexpected error occurred: {e}"}, status=500)
 
 # 通知登録
 @api_view(["GET", "POST"])
@@ -217,19 +245,21 @@ def notice_input(request):
     status = request.data.get("status")
     notice_date = timezone.localtime(timezone.now())
 
-    if user_id == re_user_id:
-        return Response({"reply": "自分に送信できません。"}, status=200)
-
     try:
         user = User.objects.get(user_id=user_id)
         group = Gp.objects.get(gp_id=group_id)
 
+        if Member.objects.filter(gp_id=group_id, user_id=re_user_id).exists():
+            return Response({"reply": "このユーザーはすでにグループのメンバーです。"}, status=201)
+
+        if not User.objects.filter(user_id=re_user_id).exists():
+            return Response({"reply": "指定されたユーザーIDが見つかりません。"}, status=202)
+
         if status == "group_invite":
             notice_title = f"{user_id}（{user.nickname}さん）からのグループ招待です！"
             notice_content = f"""
-            {re_user_id}へ
-            こんにちは！{user.nickname}さんからのグループ招待連絡です。
-            グループ番号は{group_id}、パスワードは{group.gp_pw}です。
+            こんにちは！{user.nickname}さんからのグループ招待連絡です。\n
+            グループ番号は{group_id}、パスワードは{group.gp_pw}です。\n
             ぜひご加入いただければ嬉しいです。
             """
 
@@ -248,34 +278,64 @@ def notice_input(request):
 # 通知表示
 @api_view(["GET", "POST"])
 def notice_view(request):
-    re_user_id = request.data.get("re_user_id")
+    re_user_id = request.data.get("user_id")
 
     try:
         notice_data = Notice.objects.filter(re_user_id=re_user_id)
-        print(notice_data)
-
-        if not notice_data.exists(): # 通知がない場合
-            return Response({"message": "No notices found"}, status=200)
-        #users = User.objects.all()
-        #user_dict = {user.user_id: user.nickname for user in users}
 
         data = []
         for notice in notice_data:
             notices = {
                 "user_id": notice.user_id,
                 "re_user_id": notice.re_user_id,
+                "notice_id": notice.notice_id,
                 "notice_title": notice.notice_title,
                 "notice_content": notice.notice_content,
                 "notice_date": notice.notice_date, 
             }
             data.append(notices)
 
-        print(data)
 
         return Response(data, status=200)
     except Exception:
         return Response(status=404)
 
+
+# 通知削除・拒否
+@api_view(["GET", "POST"])
+def notice_delete(request):
+    re_user_id = request.data.get("user_id")
+    notice_id = request.data.get("notice_id")
+
+    try:
+        item = Notice.objects.get(re_user_id=re_user_id, notice_id=notice_id)
+        item.delete()
+
+        return Response(status=200)
+    except Notice.DoesNotExist:
+        return Response(status=404)
+    
+# 通知のグループ取得
+@api_view(["GET", "POST"])
+def notice_gp(request):
+    re_user_id = request.data.get("user_id")
+    notice_id = request.data.get("notice_id")
+
+    try:
+        item = Notice.objects.get(re_user_id=re_user_id, notice_id=notice_id)
+
+        pattern = r"グループ番号は(\d+)、パスワードは(\d+)です。"
+        match = re.search(pattern, item.notice_content)
+
+        if match:
+            gp_id = match.group(1)  # Group ID
+            gp_pw = match.group(2)  # Group Password
+            print(f"Group ID: {gp_id}")
+            print(f"Group Password: {gp_pw}")
+        
+        return Response({"gp_id": gp_id, "gp_pw": gp_pw}, status=200)
+    except Notice.DoesNotExist:
+        return Response(status=404)
 
 # 共同機能
 # カテゴリ取得
@@ -383,6 +443,22 @@ def category_total_group(request):
         return Response(category_total_result, status=200)
     except Category.DoesNotExist or Accountbook.DoesNotExist:
         return Response(status=404)
+
+
+# 都道府県取得
+@api_view(["GET", "POST"])
+def get_prefecture(request):
+    prefectures = Prefectures.objects.all()
+    prefecture_data = []
+    for prefecture in prefectures:
+        data = {
+            "prefecture_id": prefecture.id,
+            "prefecture_name": prefecture.prefecture_name,
+            "block_name": prefecture.block_name,
+        }
+        prefecture_data.append(data)
+
+    return Response(prefecture_data)
 
 
 # 個人家計簿：収支入力
@@ -1041,6 +1117,7 @@ def public_all_contents(request):
     user_id = request.data.get('user_id')
     selected_date = request.data.get('selected_date')
 
+    # 日付検索設定
     if selected_date:
         selected_date = datetime.strptime(selected_date, "%Y-%m-%d")
         selected_week = (selected_date.day - 1) // 7 + 1
@@ -1051,6 +1128,7 @@ def public_all_contents(request):
         selected_year = None
         selected_month = None
     
+    # 投稿人設定
     if user_id:
         public_true_data = Accountbook.objects.filter(user_id=user_id, public=True)
     else:
@@ -1069,6 +1147,8 @@ def public_all_contents(request):
     for entry in public_true_data:
         user = User.objects.get(user_id=entry.user_id)
         public = Public.objects.get(public_id=entry.public_no)
+        prefecture = Prefectures.objects.get(id=public.prefecture_id)
+
         data.append({
                 "user_id": user.user_id,
                 "nickname": user.nickname,
@@ -1076,7 +1156,9 @@ def public_all_contents(request):
                 "title": public.title,
                 "date": entry.date,
                 "item_no": entry.item_no,
-                "category_id": entry.category_id
+                "category_id": entry.category_id,
+                "prefecture_id": prefecture.id,
+                "prefecture_name": prefecture.prefecture_name,
             })
 
     df = pd.DataFrame(data)
@@ -1101,7 +1183,7 @@ def public_all_contents(request):
                         accountbook_entry.public = False
                         accountbook_entry.save()
 
-    grouped_data = df.groupby(['user_id', 'year', 'month', 'week']).apply(lambda x: x[['user_id', 'nickname', 'title', 'year', 'month', 'week', 'public_no']].drop_duplicates().to_dict(orient="records")).to_dict()
+    grouped_data = df.groupby(['user_id', 'year', 'month', 'week']).apply(lambda x: x[['user_id', 'nickname', 'title', 'year', 'month', 'week', 'public_no', 'prefecture_id', 'prefecture_name']].drop_duplicates().to_dict(orient="records")).to_dict()
     grouped_data_serialized = {f"{key[0]}-{key[1]}-{key[2]}-{key[3]}": value for key, value in grouped_data.items()}
 
     return Response(grouped_data_serialized, status=200)
@@ -1148,9 +1230,11 @@ def public_status(request):
             public_status = entry['public'] # 公開状態
             public_no = entry["public_no"] # 公開情報番号
             title = None
+            prefecture_id = 48
             if not pd.isna(public_no):
                 public_entry = Public.objects.filter(public_id=entry['public_no']).first()
                 title = public_entry.title if public_entry else None
+                prefecture_id = public_entry.prefecture_id if public_entry else None
 
             # データ再処理
             response_data = {
@@ -1158,7 +1242,10 @@ def public_status(request):
                 "status": "公開中" if public_status else "未公開",
                 "title": clean_value(title),
                 "public_no": clean_value(public_no),
+                "prefecture_id": prefecture_id,
             }
+
+
             return Response(response_data, status=200)
         # データなし
         else:
@@ -1177,6 +1264,7 @@ def public_setting(request):
     week_num = int(request.data.get('week'))
     public = request.data.get('public')
     title = request.data.get('title')
+    prefecture_id = request.data.get('prefecture_id')
 
     try:
         monthly_data = Accountbook.objects.filter(
@@ -1214,10 +1302,11 @@ def public_setting(request):
                 # タイトル修正
                 public_entry = Public.objects.get(public_id=existing_public_no)
                 public_entry.title = title
+                public_entry.prefecture_id = prefecture_id
                 public_entry.save()
 
             else:  # 公開番号が存在しない場合
-                new_public = Public.objects.create(title=title)
+                new_public = Public.objects.create(title=title, prefecture_id=prefecture_id)
                 public_id = new_public.public_id
 
             for entry in week_entries.itertuples():
@@ -1229,6 +1318,7 @@ def public_setting(request):
             if not existing_public_no:
                 public_entry = Public.objects.get(public_id=public_id)
                 public_entry.title = title
+                public_entry.prefecture_id=prefecture_id
                 public_entry.save()
 
         elif public == "false":  # 未公開

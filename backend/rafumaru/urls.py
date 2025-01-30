@@ -29,6 +29,9 @@ urlpatterns = [
     # アカウント削除
     path('delete_account/', views.delete_account, name='delete_account'),
 
+    # 個人情報変更
+    path('rev_account/', views.rev_account, name='rev_account'),
+
     # パスワードリセット
     path('password_reset/', views.password_reset, name='password_reset'), # パスワードリセットメール送信
     path('attestation_cd/', views.attestation_cd, name='attestation_cd'), # 認証コード確認
@@ -37,12 +40,14 @@ urlpatterns = [
     # 通知
     path('notice_input/', views.notice_input, name='notice_input'), # 通知入力
     path('notice_view/', views.notice_view, name='notice_view'), # 通知一覧
+    path('notice_delete/', views.notice_delete, name='notice_delete'), # 通知削除
+    path('notice_gp/', views.notice_gp, name='notice_gp'), # 通知のグループ取得
 
     # 個人家計簿 と 共同家計簿　共有部分
     path('get_category/', views.get_category, name='get_category'), # カテゴリ取得
     path('category_total/', views.category_total, name='category_total'), # カテゴリ別の総計
     path('category_total_group/', views.category_total_group, name='category_total_group'), # 共同家計簿のカテゴリ別の総計
-
+    path('get_prefecture/', views.get_prefecture, name='get_prefecture'), # 都道府県取得
 
     # 個人家計簿
     path('account_book/', views.account_book, name='account_book'), # 当月の各収支表示

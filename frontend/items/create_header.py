@@ -28,6 +28,7 @@ def create_header(page_name):
                 if st.button(label="👤"):
                     st.session_state["notice"] = False
                     st.session_state["show_confirm"] = False
+                    st.session_state["info_rev"] = False
                     st.switch_page("pages/user.py")
             with col_1_mid2:
                 if st.button(label="📩"):
@@ -87,8 +88,8 @@ def create_header(page_name):
                 st.session_state["year"] = datetime.datetime.today().year # 本月のデータを表示
                 st.session_state["month"] = datetime.datetime.today().month # 本月のデータを表示
                 st.session_state["myself"] = False
-                st.session_state["show_calendar"] = False
                 st.session_state["selected_date"] = None
+                st.session_state["selected_prefecture"] = None
                 st.switch_page("pages/share_all.py")
         with col_6:
             if st.button(label="共同家計簿", use_container_width=True):

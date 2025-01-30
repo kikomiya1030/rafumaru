@@ -89,6 +89,7 @@ class Comment(models.Model):
 class Public(models.Model):
     public_id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=50)
+    prefecture_id = models.IntegerField()
 
     class Meta:
         managed = False
@@ -139,3 +140,12 @@ class Notice(models.Model):
     class Meta:
         managed = False
         db_table = 'notice'
+
+class Prefectures(models.Model):
+    id = models.AutoField(primary_key=True)
+    prefecture_name = models.CharField(max_length=8)
+    block_name = models.CharField(max_length=8)
+
+    class Meta:
+        managed = False
+        db_table = 'prefectures'

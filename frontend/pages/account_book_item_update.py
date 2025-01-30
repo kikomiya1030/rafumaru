@@ -26,7 +26,7 @@ update_date = st.session_state['date']
 update_memo = st.session_state['memo']
 
 # ログインしているユーザーIDを取得する
-user_id = st.session_state["user_id"]
+user_id = st.session_state["user"].user_id
 path = st.session_state["path"]
 
 

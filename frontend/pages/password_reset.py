@@ -1,5 +1,4 @@
 import streamlit as st
-import time
 import socket
 from items.hide_default_header import hide_header
 from items.create_header import create_header
@@ -50,7 +49,7 @@ with col_2:
         message = st.empty()
 
         # ID入力フィールド
-        user_id = st.text_input("ID入力", key="user_id")
+        user_id = st.text_input("ID入力")
 
         st.markdown(space_html, unsafe_allow_html=True)
 
@@ -73,8 +72,6 @@ with col_2:
                     message.success("該当メールアドレスに送信しました！")
                     response = requests.post(reset_url, json={"user_id": user_id})
                     if response.status_code == 200: # リクエスト成功
-                        time.sleep(1)
-
                         # 取得された認証コードを保存
                         data = response.json()
                         code = data.get("code")

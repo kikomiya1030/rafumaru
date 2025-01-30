@@ -121,7 +121,7 @@ with col2:
         message = st.empty() # 割合入力メッセージ
         col_left2, colG, left_3 = st.columns([3.8,4,1])  # ボタン設定
         with col_left2:
-            st.markdown('<p style="color: red;">割合の合計は100になる必要です。</p>',unsafe_allow_html=True) 
+            st.markdown('<p style="color: red;">割合の合計は100になる必要があり。</p>',unsafe_allow_html=True) 
         with colG:
             st.markdown("")
             st.markdown("")

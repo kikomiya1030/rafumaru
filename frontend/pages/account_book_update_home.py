@@ -44,6 +44,7 @@ if "user_id" not in st.session_state:
 colA, colB = st.columns([1,20])
 with colA:
     if st.button("⬅︎"):
+        del st.session_state["random_colors"]
         st.switch_page("pages/account_book_detail.py")
 with colB:
     st.subheader(f"{update_year}年 {update_month}月 第{update_week}週の詳細")

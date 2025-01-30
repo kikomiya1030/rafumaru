@@ -41,8 +41,12 @@ path = st.session_state["path"]
 
 
 if "user" in st.session_state:
-    col_left, col_right = st.columns([10,4])
+    col_left,col_left2, col_right = st.columns([1,9,4])
     with col_left:
+        if st.button("⬅︎"):
+            st.session_state["show_confirm_delete"] = False
+            st.switch_page("pages/group.py")
+    with col_left2:
         st.subheader(group_name) 
         st.caption("収入入力可" if income_input else "収入入力不可")
     # 友達招待欄
@@ -60,19 +64,24 @@ if "user" in st.session_state:
                 st.caption("")
                 st.caption("")
                 if st.button("送信", key="notice_submit"):
-                    status = "group_invite"
-                    notice_url = f"http://{path}:8000/api/notice_input/" # ローカル 
-                    notice_response = requests.post(notice_url, json={"user_id": user_id, "re_user_id": re_user_id, "group_id": group_id, "status": status})
-                    notice_response_data = notice_response.json()
-                    if notice_response.status_code == 200:
-                        msg.success("招待を送信しました！")
-                        time.sleep(1)
-                        st.session_state["invite"] = False
-                        st.switch_page("pages/group_main.py")
-                        
+                    if user_id == re_user_id:
+                        msg.error("自分に送信できません。")
                     else:
-                        msg.error("送信失敗しました。")
-        
+                        status = "group_invite"
+                        notice_url = f"http://{path}:8000/api/notice_input/" # ローカル 
+                        notice_response = requests.post(notice_url, json={"user_id": user_id, "re_user_id": re_user_id, "group_id": group_id, "status": status})
+                        notice_response_data = notice_response.json()
+                        if notice_response.status_code == 200:
+                            msg.success("招待を送信しました！")
+                            time.sleep(1)
+                            st.session_state["invite"] = False
+                            st.switch_page("pages/group_main.py")
+                        elif notice_response.status_code == 201:
+                            msg.error("このユーザーはすでにグループのメンバーです。")
+                        elif notice_response.status_code == 202:
+                            msg.error("ユーザーが存在してません。")
+                        else:
+                            msg.error("送信失敗しました。")
 
     # メイン画面分割
     col_1, col_2, col_3 = st.columns([5, 5, 4])
@@ -157,7 +166,7 @@ if "user" in st.session_state:
                     
                 # Pie インスタンスを作成してグラフを表示
                 pie = Pie()
-                pie.create_chart(data)
+                pie.create_chart(data, height=300)
     
             col_6, col_7, col_8 = st.columns([6, 3, 5]) # ボタンの位置設定
             with col_7 :
