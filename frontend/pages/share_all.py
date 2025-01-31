@@ -120,10 +120,10 @@ with col_1:
                     st.write('')
                     st.write('')
                     st.subheader(f"{number}. {title}")
-                    st.markdown(f"日付： {year}年{month}月{week_date}")
-                    st.markdown(f"ユーザー： {nickname}")
-                    st.markdown(f"都道府県： {prefecture_name}")
-                    st.markdown(f"当週総支出： ¥{total:,}")
+                    st.markdown(f"📅日付： {year}年{month}月{week_date}")
+                    st.markdown(f"👤ユーザー： {nickname}")
+                    st.markdown(f"📍都道府県： {prefecture_name}")
+                    st.markdown(f"💰当週総支出： ¥{total:,}")
                     number += 1
                 
                 # グラフ

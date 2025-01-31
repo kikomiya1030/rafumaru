@@ -74,7 +74,7 @@ with st.container():
             category_out += item["total_amount"]
     
     with col_mid:
-        st.write(f"**{year}年{month}月の支出**")
+        st.write(f"**{year}年{month}月の収支**")
     with col_C:
         st.write("")
         st.write("")
@@ -132,14 +132,18 @@ with col2:
                 elif total_percentage > 100:
                     message.error("割合の合計が100を超えています。")
                 else:
-                    message.success("計算中...")
+                    progress_text = "計算中..."
+                    for percent_complete in range(100):
+                        time.sleep(0.01)
+                        message.progress(percent_complete + 1, text=progress_text)
+                    time.sleep(1)
+                    message.empty()
+
                     cal_url = f"http://{path}:8000/api/share_account_book_calculation/" # ローカル 
                     cal_response = requests.post(cal_url, json={"user_id": user_ids, "group_id": group_id, "year": year, "month": month, "percent": input_percentages})
 
-                    time.sleep(1)
-
                     if cal_response.status_code == 200:
-                        calculation_result = cal_response.json().get("data", []) # Store the result
+                        calculation_result = cal_response.json().get("data", [])
                         message.empty()
                     else:
                         st.error("計算に失敗しました。")

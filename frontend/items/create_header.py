@@ -43,7 +43,8 @@ def create_header(page_name):
                     del st.session_state["nickname"]
                     del st.session_state["last_login"]
                     st.session_state["sessionid"] = None
-                    st.rerun() 
+                    #st.rerun()
+                    st.switch_page("pages/main.py")
         else:
             col_1_left, col_1_right = col_1.columns(2)
             with col_1_left:

@@ -149,3 +149,14 @@ class Prefectures(models.Model):
     class Meta:
         managed = False
         db_table = 'prefectures'
+
+class Chat(models.Model):
+    chat_id = models.AutoField(primary_key=True)
+    gp_id = models.IntegerField()
+    user_id = models.CharField(max_length=20)
+    chat = models.CharField(max_length=200)
+    chat_time = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'chat'

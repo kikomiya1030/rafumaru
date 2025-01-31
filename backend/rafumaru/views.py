@@ -4,7 +4,7 @@ from django.http import HttpRequest
 from . import models
 from .serializers import UserSerializer
 
-from .models import User, Category, Accountbook, Gp, Member, Shareaccountbook, Public, Comment, Notice, Prefectures
+from .models import User, Category, Accountbook, Gp, Member, Shareaccountbook, Public, Comment, Notice, Prefectures, Chat
 from django.db.models import Sum, Case, When, IntegerField, F
 from django.utils import timezone
 from datetime import datetime, date
@@ -1414,4 +1414,52 @@ def public_like(request):
 
         return Response(status=200)
     except Comment.DoesNotExist or User.DoesNotExist:
+        return Response(status=404)
+
+
+# チャット：入力
+@api_view(['GET', "POST"])
+def chat_input(request):
+    group_id = request.data.get('group_id')
+    user_id = request.data.get("user_id")
+    chat = request.data.get("chat")
+    chat_time = timezone.localtime(timezone.now())
+
+    try:
+        Chat.objects.create(
+            gp_id = group_id,
+            user_id = user_id,
+            chat = chat,
+            chat_time = chat_time,
+        )
+        return Response("status: chat", status=200)
+    except Chat.DoesNotExist:
+        return Response(status=404)
+
+
+# チャット：表示
+@api_view(['GET', "POST"])
+def chat_view(request):
+    group_id = request.data.get('group_id')
+
+    try:
+        chat_data = Chat.objects.filter(gp_id=group_id)
+        user_dict = User.objects.all()
+
+        data = []
+        for chat in chat_data:
+            user = user_dict.filter(user_id=chat.user_id).first()
+            nickname = user.nickname if user else "名無しさん"
+
+            chats = {
+                "chat_id": chat.chat_id,
+                "user_id": chat.user_id,
+                "nickname": nickname,
+                "group_id": chat.gp_id,
+                "chat": chat.chat,
+                "chat_time": chat.chat_time,
+            }
+            data.append(chats)
+        return Response(data, status=200)
+    except Exception:
         return Response(status=404)

@@ -16,19 +16,21 @@ import json
 
 set_con()
 hide_header()
+
 # パス設定
-#if "path" not in st.session_state:
-#    host = socket.gethostname()
-#    ip = socket.gethostbyname(host)
-#    st.session_state["path"] = ip
-
-# ヘッダー
-create_header("らふまる")
-
 if "path" not in st.session_state:
     host = socket.gethostname()
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
+
+# ヘッダー
+create_header("らふまる")
+
+# セッション確認
+#session_list = ["month", "year", "today", "calendar", "path"]
+#if not all(session_var in st.session_state for session_var in session_list):
+#    st.switch_page("pages/main.py")
+
 
 if st.session_state["user_id"] is not None:
     # メイン画面分割
@@ -136,7 +138,7 @@ if st.session_state["user_id"] is not None:
             # 日付入力
             date = st.date_input('日付', value="today")
             # 金額入力
-            amount = st.number_input('金額', value=None, min_value=0, step=1)
+            amount = st.number_input('金額', value=None, min_value=0, max_value=1500000000, step=1)
             st.markdown("""
                 <style>
                 .stNumberInput > div > div > button {
@@ -158,7 +160,7 @@ if st.session_state["user_id"] is not None:
                 key="category"
             )
             # メモ入力
-            memo = st.text_area('メモ', value=None)
+            memo = st.text_area('メモ', value=None, max_chars=200)
 
             # メッセージ
             message = st.empty()
@@ -176,6 +178,8 @@ if st.session_state["user_id"] is not None:
                     message.error("最大15億円まで入力可能です。")
                 elif selected_category_id is None:
                     message.error("カテゴリを入力してください。")
+                elif len(memo) > 200:
+                    message.error("200文字まで入力可能です。")
                 else: # 登録
                     message.empty() # エラーメッセージがあれば消す
                     url = f"http://{path}:8000/api/account_book_input/" # ローカル 

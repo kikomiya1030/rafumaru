@@ -70,6 +70,10 @@ urlpatterns = [
     path('share_account_book_item_delete/', views.share_account_book_item_delete, name='share_account_book_item_delete'), # 収支削除
     path('share_account_book_calculation/', views.share_account_book_calculation, name='share_account_book_calculation'), # 収支分割計算
 
+    # チャット
+    path('chat_input/', views.chat_input, name='chat_input'), # チャット入力
+    path('chat_view/', views.chat_view, name='chat_view'), # チャット表示
+
     # 公開
     path('public_all_contents/', views.public_all_contents, name='public_all_contents'), # 公開一覧
     path('public_status/', views.public_status, name='public_status'), # 公開状態一覧

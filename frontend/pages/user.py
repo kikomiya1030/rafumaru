@@ -4,6 +4,8 @@ import pandas as pd
 import requests
 import socket
 import time
+import pytz
+
 from streamlit_modal import Modal
 
 from items.hide_default_header import hide_header
@@ -64,9 +66,9 @@ if st.session_state["notice"] == False:
             with st.container(border=True):
                 col1, col2 = st.columns([1,2])
                 with col1:
-                    st.write("User id:")
-                    st.write("Nickname:")
-                    st.write("email:")
+                    st.write("ユーザーID:")
+                    st.write("ニックネーム：")
+                    st.write("メールアドレス：")
 
                 with col2:
                     st.write(user_id)
@@ -160,7 +162,12 @@ else:
                                 if reject_response.status_code == 200:
                                     st.switch_page("pages/user.py")
                         st.write(f"{notice_content}")
-                        st.caption(f"{notice_date}")
+                        # 日付表示
+                        notice_date_re = datetime.strptime(notice_date, '%Y-%m-%dT%H:%M:%SZ')
+                        japan_tz = pytz.timezone("Asia/Tokyo")
+                        notice_date = notice_date_re.replace(tzinfo=pytz.utc).astimezone(japan_tz)
+                        st.caption(f"{notice_date.strftime('%Y-%m-%d %H:%M:%S')}")
+
                         col_3, col_4 = st.columns([1,9])
                         msg = st.empty()
                         with col_3:

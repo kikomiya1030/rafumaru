@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 import socket
 import time
+import pytz
 
 from streamlit_elements import elements
 from pages.main_items.pie import Pie
@@ -27,17 +28,18 @@ if "path" not in st.session_state:
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
 
-# ユーザーがログインしてない場合
-if "user_id" not in st.session_state:
-    st.switch_page("pages/main.py")
 
 # ユーザーID、グループIDを取得する
 user_id = st.session_state["user_id"]
 group_id = st.session_state['group_id']
 group_name = st.session_state['group_name']
 income_input = st.session_state['income_input']
-
 path = st.session_state["path"]
+nickname = st.session_state["nickname"]
+
+# ユーザーがログインしてない場合
+if "user_id" not in st.session_state:
+    st.switch_page("pages/main.py")
 
 
 if "user" in st.session_state:
@@ -137,8 +139,10 @@ if "user" in st.session_state:
                 st.text("今月")
                 st.text("今週")
                 st.text("今日")
+                st.write("")
             else:
                 st.text("当月")
+                st.write("")
         # データベースから収支を取り出す
         with col_5:
             if datetime.today().month == st.session_state["month"] and datetime.today().year == st.session_state["year"]:
@@ -148,6 +152,47 @@ if "user" in st.session_state:
             else:
                 monthly_amount = st.text("¥" + f"{all_amount.get('total_month'):,}")
 
+
+        # 会話ボックス
+        messages = st.container(height=330)
+
+        chat_url = f"http://{path}:8000/api/chat_view/" # ローカル
+        chat_response = requests.post(chat_url, json={"group_id": group_id})
+            
+        if chat_response.status_code == 200:
+            chat_data = chat_response.json()
+        else:
+            chat_data = []
+
+        for chat in chat_data:
+            chat_id = chat["chat_id"]
+            chat_user_id = chat["user_id"]
+            chat_nickname = chat["nickname"]
+            chat_group_id = chat["group_id"]
+            chat_message = chat["chat"]
+
+            # 日付設定
+            chat_time_re = datetime.strptime(chat["chat_time"], '%Y-%m-%dT%H:%M:%SZ')
+            japan_tz = pytz.timezone("Asia/Tokyo")
+            chat_time = chat_time_re.replace(tzinfo=pytz.utc).astimezone(japan_tz)
+            chat_time = f"{chat_time.strftime('%Y-%m-%d %H:%M:%S')}"
+
+            message = messages.chat_message("user" if chat_user_id == user_id else "assistant")
+            message.write(f"{chat_nickname}: {chat_message}")
+            message.caption(chat_time)
+
+        if prompt := st.chat_input("話してみましょう！"):
+            if prompt.strip():
+            # 入力
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                user_message = messages.chat_message("user")
+                user_message.write(f"{chat_nickname}: {prompt}")
+                user_message.caption(current_time)
+
+                chat_in_url = f"http://{path}:8000/api/chat_input/" # ローカル
+                chat_in_response = requests.post(chat_in_url, json={"user_id": user_id, "group_id": group_id, "chat": prompt})
+                if chat_in_response.status_code == 200:
+                    chat_input = chat_in_response.json()
 
         # グラフ
         with col_2:
@@ -179,7 +224,7 @@ if "user" in st.session_state:
             with st.form("form", clear_on_submit=True):
                 st.subheader("入力欄")
                 date = st.date_input('日付', value="today") # 日付
-                amount = st.number_input('金額', value=None, min_value=0, step=1) # 金額
+                amount = st.number_input('金額', value=None, min_value=0, max_value=1500000000, step=1) # 金額
                 st.markdown("""
                     <style>
                     .stNumberInput > div > div > button {
@@ -206,7 +251,7 @@ if "user" in st.session_state:
                 )
                 
                 # メモ
-                memo = st.text_area('メモ', value=None)
+                memo = st.text_area('メモ', value=None, max_chars=200)
 
                 # メッセージ
                 message = st.empty()
