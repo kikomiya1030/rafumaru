@@ -69,7 +69,7 @@ def register(request):
     for i in test_data:
         check_dupli = True
     if check_dupli:
-        return Response({"message":"IDまたはメールアドレスがすでに登録済みです。"})
+        return Response({"message":"IDまたはメールアドレスがすでに登録済みです。"}, status=201)
     else:
         models.User.objects.create_user(user_id, mail_address, password, nick_name, last_login)
         data = {
@@ -333,6 +333,10 @@ def notice_gp(request):
             print(f"Group ID: {gp_id}")
             print(f"Group Password: {gp_pw}")
         
+        gp_confirm = Gp.objects.filter(gp_id=gp_id)
+        if not gp_confirm.exists():
+            return Response(status=201)
+        
         return Response({"gp_id": gp_id, "gp_pw": gp_pw}, status=200)
     except Notice.DoesNotExist:
         return Response(status=404)
@@ -423,6 +427,7 @@ def category_total_group(request):
             date__year=year,
             date__month=month
         )
+
         # カテゴリ別計算
         category_total = account_book.values('category_id').annotate(total_amount=Sum('amount'))
 
@@ -785,8 +790,8 @@ def group_delete(request):
         Member.objects.filter(user_id=user_id, gp_id=group_id).delete()
         # 該当グループにメンバーが存在してない場合
         if not Member.objects.filter(gp_id=group_id).exists():
-            # グループを削除
-            Gp.objects.filter(gp_id=group_id).delete()
+            Chat.objects.filter(gp_id=group_id).delete() # チャット記録を削除
+            Gp.objects.filter(gp_id=group_id).delete() # グループを削除
 
             # 共同家計簿を削除
             Shareaccountbook.objects.filter(gp_id=group_id).delete()
@@ -1453,7 +1458,7 @@ def chat_view(request):
 
             chats = {
                 "chat_id": chat.chat_id,
-                "user_id": chat.user_id,
+                "user_id": chat.user_id if chat.user_id else None,
                 "nickname": nickname,
                 "group_id": chat.gp_id,
                 "chat": chat.chat,

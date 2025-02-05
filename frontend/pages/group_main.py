@@ -22,27 +22,37 @@ hide_header()
 # ヘッダー
 create_header("らふまる")
 
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
+    st.switch_page("pages/main.py")
+
 # パス設定
 if "path" not in st.session_state:
     host = socket.gethostname()
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
 
+# 画面用の初期値設定
+if "chat_box" not in st.session_state:
+    st.session_state["chat_box"] = False
 
-# ユーザーID、グループIDを取得する
+# セッション確認
+session_list = ["path", "group_id", "group_name", "income_input"]
+if any(session not in st.session_state for session in session_list):
+    st.switch_page("pages/main.py")
+    st.stop()
+
+# セッションからデータを取り出す
 user_id = st.session_state["user_id"]
-group_id = st.session_state['group_id']
-group_name = st.session_state['group_name']
-income_input = st.session_state['income_input']
 path = st.session_state["path"]
 nickname = st.session_state["nickname"]
 
-# ユーザーがログインしてない場合
-if "user_id" not in st.session_state:
-    st.switch_page("pages/main.py")
+group_id = st.session_state["group_id"]
+group_name = st.session_state["group_name"]
+income_input = st.session_state["income_input"]
 
 
-if "user" in st.session_state:
+if "user_id" in st.session_state:
     col_left,col_left2, col_right = st.columns([1,9,4])
     with col_left:
         if st.button("⬅︎"):
@@ -151,48 +161,63 @@ if "user" in st.session_state:
                 this_daily_amount = st.text("¥ " + f"{all_amount.get('total_today'):,}")
             else:
                 monthly_amount = st.text("¥" + f"{all_amount.get('total_month'):,}")
+        st.markdown("---")
 
-
+        # チャットボタン設定
+        colY, colZ = st.columns([9,2])
+        with colY:
+            chat_btn = st.button("チャット")
+            if chat_btn and st.session_state["chat_box"] == False:
+                st.session_state["chat_box"] = True
+                st.switch_page("pages/group_main.py")
+            elif chat_btn and st.session_state["chat_box"]:
+                st.session_state["chat_box"] = False
+                st.switch_page("pages/group_main.py")
+        with colZ:
+            if st.button("🔃"):
+                st.switch_page("pages/group_main.py")
+        
+        if st.session_state["chat_box"]:
         # 会話ボックス
-        messages = st.container(height=330)
+            messages = st.container(height=330)
 
-        chat_url = f"http://{path}:8000/api/chat_view/" # ローカル
-        chat_response = requests.post(chat_url, json={"group_id": group_id})
-            
-        if chat_response.status_code == 200:
-            chat_data = chat_response.json()
-        else:
-            chat_data = []
+            chat_url = f"http://{path}:8000/api/chat_view/" # ローカル
+            chat_response = requests.post(chat_url, json={"group_id": group_id})
+                
+            if chat_response.status_code == 200:
+                chat_data = chat_response.json()
+            else:
+                chat_data = []
 
-        for chat in chat_data:
-            chat_id = chat["chat_id"]
-            chat_user_id = chat["user_id"]
-            chat_nickname = chat["nickname"]
-            chat_group_id = chat["group_id"]
-            chat_message = chat["chat"]
+            for chat in chat_data:
+                chat_id = chat["chat_id"]
+                chat_user_id = chat["user_id"] if chat["user_id"] else None
+                chat_nickname = chat["nickname"] if chat["nickname"] else "名無しさん"
+                chat_group_id = chat["group_id"]
+                chat_message = chat["chat"]
 
-            # 日付設定
-            chat_time_re = datetime.strptime(chat["chat_time"], '%Y-%m-%dT%H:%M:%SZ')
-            japan_tz = pytz.timezone("Asia/Tokyo")
-            chat_time = chat_time_re.replace(tzinfo=pytz.utc).astimezone(japan_tz)
-            chat_time = f"{chat_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                # 日付設定
+                chat_time_re = datetime.strptime(chat["chat_time"], '%Y-%m-%dT%H:%M:%SZ')
+                japan_tz = pytz.timezone("Asia/Tokyo")
+                chat_time = chat_time_re.replace(tzinfo=pytz.utc).astimezone(japan_tz)
+                chat_time = f"{chat_time.strftime('%Y-%m-%d %H:%M:%S')}"
 
-            message = messages.chat_message("user" if chat_user_id == user_id else "assistant")
-            message.write(f"{chat_nickname}: {chat_message}")
-            message.caption(chat_time)
+                message = messages.chat_message("user" if chat_user_id == user_id else "assistant")
+                message.write(f"{chat_nickname}: {chat_message}")
+                message.caption(chat_time)
 
-        if prompt := st.chat_input("話してみましょう！"):
-            if prompt.strip():
-            # 入力
-                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                user_message = messages.chat_message("user")
-                user_message.write(f"{chat_nickname}: {prompt}")
-                user_message.caption(current_time)
+            if prompt := st.chat_input("話してみましょう！"):
+                if prompt.strip():
+                # 入力
+                    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    user_message = messages.chat_message("user")
+                    user_message.write(f"{nickname}: {prompt}")
+                    user_message.caption(current_time)
 
-                chat_in_url = f"http://{path}:8000/api/chat_input/" # ローカル
-                chat_in_response = requests.post(chat_in_url, json={"user_id": user_id, "group_id": group_id, "chat": prompt})
-                if chat_in_response.status_code == 200:
-                    chat_input = chat_in_response.json()
+                    chat_in_url = f"http://{path}:8000/api/chat_input/" # ローカル
+                    chat_in_response = requests.post(chat_in_url, json={"user_id": user_id, "group_id": group_id, "chat": prompt})
+                    if chat_in_response.status_code == 200:
+                        chat_input = chat_in_response.json()
 
         # グラフ
         with col_2:
@@ -201,6 +226,7 @@ if "user" in st.session_state:
                 category_total_url = f"http://{path}:8000/api/category_total_group/"  # ローカル
                 category_total_response = requests.post(category_total_url, json={"group_id": group_id, "year": current_year, "month": current_month})
                 category_total_data = category_total_response.json()
+                
                 data = {}
                 for item in category_total_data:
                     category_id = item.get("category_id", "Unknown")

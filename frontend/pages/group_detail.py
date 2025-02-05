@@ -19,26 +19,9 @@ hide_header()
 # ヘッダー
 create_header("らふまる")
 
-# ログインしているユーザーID、前のページの年月を取得する
-user_id = st.session_state["user_id"]
-group_id = st.session_state['group_id']
-group_name = st.session_state['group_name']
-year = st.session_state.get("year")
-month = st.session_state.get("month")
-path = st.session_state["path"]
-income_input = st.session_state['income_input']
-
-# 最初のアクセスする時、現在の日付を取得
-if "month" not in st.session_state:
-    st.session_state["month"] = datetime.today().month
-if "year" not in st.session_state:
-    st.session_state["year"] = datetime.today().year
-if "today" not in st.session_state:
-    st.session_state["today"] = datetime.today().date()
-if "filter" not in st.session_state:
-    st.session_state["filter"] = False
-if "gp_calendar" not in st.session_state:
-    st.session_state["gp_calendar"] = False
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
+    st.switch_page("pages/main.py")
 
 # パス設定
 if "path" not in st.session_state:
@@ -46,9 +29,34 @@ if "path" not in st.session_state:
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
 
-# ユーザーがログインしてない場合
-if "user_id" not in st.session_state:
+# 最初のアクセスする時、現在の日付を取得
+if "year" not in st.session_state:
+    st.session_state["year"] = datetime.today().year
+if "month" not in st.session_state:
+    st.session_state["month"] = datetime.today().month
+if "today" not in st.session_state:
+    st.session_state["today"] = datetime.today().date()
+if "filter" not in st.session_state:
+    st.session_state["filter"] = False
+if "gp_calendar" not in st.session_state:
+    st.session_state["gp_calendar"] = False
+
+# セッション確認
+session_list = ["path", "group_id", "group_name", "income_input", "year", "month", "today"]
+if any(session not in st.session_state for session in session_list):
     st.switch_page("pages/main.py")
+    st.stop()
+
+# セッションからデータを取り出す
+user_id = st.session_state["user_id"]
+path = st.session_state["path"]
+
+group_id = st.session_state["group_id"]
+group_name = st.session_state["group_name"]
+year = st.session_state["year"]
+month = st.session_state["month"]
+income_input = st.session_state["income_input"]
+
 
 # ランダムカラー
 def get_random_color():
@@ -75,6 +83,7 @@ with col_A:
         st.session_state["filter"] = False
         st.session_state["invite"] = False
         st.session_state["gp_calendar"] = False
+        st.session_state["chat_box"] = False
         st.switch_page("pages/group_main.py")
 with col_B:
     st.subheader(group_name) 
@@ -213,7 +222,8 @@ elif st.session_state["gp_calendar"]:
             "headerToolbar": False, # 日付選択ボタンの表示を取り消す
             "editable": False,
             "events": events,
-            "dayMaxEventRows": True,
+            "dayMaxEventRows": 3,
+            "contentHeight": "auto"
             }
         
         st_calendar.calendar(options=options)

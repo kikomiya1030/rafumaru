@@ -7,22 +7,22 @@ from items.hide_default_header import hide_header
 from items.set_config import set_con
 from user import User
 
-
 set_con()
+hide_header()
 
+# パス設定
 if "path" not in st.session_state:
     host = socket.gethostname()
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
-
-hide_header()
 
 submit_btn = False
 is_success = False
 
 col_1, col_2, col_3 = st.columns([1, 8, 1])
 with col_1:
-    pass
+    if st.button("⬅︎"):
+        st.switch_page("pages/main.py")
 with col_2:
     if is_success == False:
         my_form = st.form(key="register")
@@ -68,6 +68,8 @@ with col_2:
                         message.error("メールアドレスを入力してください。")
                     elif password == "":
                         message.error("パスワードを入力してください。")
+                    elif len(password) < 8 or len(password) > 16:
+                        message.error("パスワードは8～16文字で入力してください。")
                     elif nick_name == "":
                         message.error("ニックネームを入力してください。")
                     else:
@@ -75,6 +77,8 @@ with col_2:
                         path = st.session_state["path"]
                         last_login = str(datetime.datetime.now())
                         response = requests.post(f"http://{path}:8000/api/register/", json={"user_id": user_id, "mail_address":mail_address, "password":password, "nick_name":nick_name, 'last_login': last_login})
+                        if response.status_code == 201:
+                            message.error("IDまたはメールアドレスがすでに登録済みです。")
                         if response.status_code == 200:
                             is_res_data = response.json()
                             is_res = is_res_data["message"]
@@ -89,7 +93,6 @@ with col_2:
                                 user = User(is_res_data["user_id"], is_res_data["mail_address"], is_res_data["password"], is_res_data["nickname"], is_res_data["last_login"])
                                 st.session_state["user"] = user
                                 is_success = True
-                                
                             else:
                                 message.error("登録に失敗しました")
                                 is_success = False

@@ -8,14 +8,14 @@ import requests
 
 set_con()
 
+hide_header()
+create_header("らふまる")
+
+# パス設定
 if "path" not in st.session_state:
     host = socket.gethostname()
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
-
-
-hide_header()
-create_header("らふまる")
 
 submit_btn = False
 col_1, col_2, col_3 = st.columns([1, 8, 1])

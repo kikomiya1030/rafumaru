@@ -6,6 +6,7 @@ from streamlit_modal import Modal
 
 import requests
 import time
+import socket
 
 # set_page_configは最初に記述
 set_con()
@@ -27,19 +28,29 @@ hide_header()
 # ヘッダー
 create_header("らふまる")
 
-# セッションから年月週を取得する
-update_week = st.session_state['update_week']
-update_year = st.session_state['update_year']
-update_month = st.session_state['update_month']
-
-# ログインしているユーザーIDを取得する
-user_id = st.session_state["user"].user_id
-path = st.session_state["path"]
-
-# ユーザーがログインしてない場合
-if "user_id" not in st.session_state:
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
     st.switch_page("pages/main.py")
 
+# パス設定
+if "path" not in st.session_state:
+    host = socket.gethostname()
+    ip = socket.gethostbyname(host)
+    st.session_state["path"] = ip
+
+# セッション確認
+session_list = ["path", "update_year", "update_month", "update_week"]
+if any(session not in st.session_state for session in session_list):
+    st.switch_page("pages/main.py")
+    st.stop()
+
+# セッションからデータを取り出す
+user_id = st.session_state["user_id"]
+path = st.session_state["path"]
+
+update_year = st.session_state["update_year"]
+update_month = st.session_state["update_month"]
+update_week = st.session_state["update_week"]
 
 colA, colB = st.columns([1,20])
 with colA:

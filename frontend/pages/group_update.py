@@ -25,27 +25,32 @@ hide_header()
 
 create_header("らふまる")
 
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
+    st.switch_page("pages/main.py")
+
 # パス設定
 if "path" not in st.session_state:
     host = socket.gethostname()
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
 
-# ユーザーがログインしてない場合
-if "user_id" not in st.session_state:
+# セッション確認
+session_list = ["path", "group_id", "group_name", "income_input", "update_year", "update_month", "update_week"]
+if any(session not in st.session_state for session in session_list):
     st.switch_page("pages/main.py")
+    st.stop()
 
-# ユーザーID、グループIDを取得する
+# セッションからデータを取り出す
 user_id = st.session_state["user_id"]
-group_id = st.session_state['group_id']
-group_name = st.session_state['group_name']
-income_input = st.session_state['income_input']
 path = st.session_state["path"]
 
-# セッションから年月週を取得する
-update_week = st.session_state['update_week']
-update_year = st.session_state['update_year']
-update_month = st.session_state['update_month']
+group_id = st.session_state["group_id"]
+group_name = st.session_state["group_name"]
+income_input = st.session_state["income_input"]
+update_year = st.session_state["update_year"]
+update_month = st.session_state["update_month"]
+update_week = st.session_state["update_week"]
 
 
 colA, colB = st.columns([1,20])

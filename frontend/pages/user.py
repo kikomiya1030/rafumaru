@@ -20,28 +20,38 @@ hide_header()
 # ヘッダー
 create_header("らふまる")
 
+# ユーザー確認
+if st.session_state["user_id"] is None:
+    st.switch_page("pages/main.py")
+
+# 画面設定用セッション
+if "info_rev" not in st.session_state:
+    st.session_state["info_rev"] = False
+if "notice" not in st.session_state:
+    st.session_state["notice"] = False
+
+# 退会ボタンの初期設定
+if "show_confirm" not in st.session_state:
+    st.session_state["show_confirm"] = False
+
 # パス設定
 if "path" not in st.session_state:
     host = socket.gethostname()
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
 
-# ユーザーID取得する
-user_id = st.session_state["user_id"]
-nickname = st.session_state["nickname"]
-email = st.session_state["mail_address"]
+# セッション確認
+session_list = ["user_id", "path", "nickname", "mail_address"]
+if any(session not in st.session_state for session in session_list):
+    st.switch_page("pages/main.py")
+    st.stop()
 
+# セッションからデータを取り出す
+user_id = st.session_state["user_id"]
 path = st.session_state["path"]
 
-# ユーザーがログインしてない場合
-if st.session_state["user_id"] == None:
-    st.switch_page("pages/main.py")
-if "show_confirm" not in st.session_state:
-    st.session_state["show_confirm"] = False
-if "info_rev" not in st.session_state:
-    st.session_state["info_rev"] = False
-if "notice" not in st.session_state:
-    st.switch_page("pages/main.py")
+nickname = st.session_state["nickname"]
+email = st.session_state["mail_address"]
 
 col_left, col_mid, col_right = st.columns([3,9,3])
 
@@ -77,7 +87,7 @@ if st.session_state["notice"] == False:
                     
                 st.write("")
                 
-
+                del_msg = st.empty()
                 # 削除用のボタン
                 if st.button("退会", use_container_width=True):
                     st.session_state["show_confirm"] = True
@@ -92,7 +102,7 @@ if st.session_state["notice"] == False:
                             url = f"http://{path}:8000/api/delete_account/"  # ローカル
                             response = requests.post(url, json={"user_id": user_id})
                             if response.status_code == 200:
-                                st.success("退会しました。")
+                                del_msg.success("退会しました。")
                                 time.sleep(1)
                                 del st.session_state["user_id"]
                                 del st.session_state["mail_address"]
@@ -103,7 +113,7 @@ if st.session_state["notice"] == False:
                                 st.session_state["sessionid"] = None
                                 st.switch_page("pages/main.py")
                             else:
-                                st.error("削除に失敗しました。")
+                                del_msg.error("削除に失敗しました。")
                     with col_cancel:
                         if st.button("いいえ", key="no"):
                             st.session_state["show_confirm"] = False
@@ -174,6 +184,12 @@ else:
                             if st.button("加入", key=f"join{notice_num}"):
                                 join_url = f"http://{path}:8000/api/notice_gp/"  # ローカル
                                 join_response = requests.post(join_url, json={"user_id": user_id, "notice_id": notice_id})
+                                if join_response.status_code == 201:
+                                    msg.error("グループが存在していません。この通知削除します。")
+                                    delete_url = f"http://{path}:8000/api/notice_delete/"  # ローカル
+                                    delete_response = requests.post(delete_url, json={"user_id": user_id, "notice_id": notice_id})
+                                    if reject_response.status_code == 200:
+                                        st.switch_page("pages/user.py")
                                 if join_response.status_code == 200:
                                     group_data = join_response.json()
                                     group_id = group_data["gp_id"]
@@ -181,6 +197,7 @@ else:
 
                                     add_url = f"http://{path}:8000/api/group_add/"
                                     add_response = requests.post(add_url, data={"user_id": user_id, "group_id": group_id, "group_password": group_pw})
+
                                     if add_response.status_code == 200:
                                         # 通知を削除する
                                         delete_url = f"http://{path}:8000/api/notice_delete/"

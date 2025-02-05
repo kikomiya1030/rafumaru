@@ -15,7 +15,9 @@ hide_header()
 # ヘッダー
 create_header("らふまる")
 
-user_id = st.session_state["user_id"]
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
+    st.switch_page("pages/main.py")
 
 # パス設定
 if "path" not in st.session_state:
@@ -23,12 +25,22 @@ if "path" not in st.session_state:
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
 
-# ユーザーがログインしてない場合
-if "user" not in st.session_state:
-    st.switch_page("pages/main.py")
+# 最初のアクセスする時、現在の日付を取得
+if "year" not in st.session_state:
+    st.session_state["year"] = datetime.today().year
+if "month" not in st.session_state:
+    st.session_state["month"] = datetime.today().month
+if "today" not in st.session_state:
+    st.session_state["today"] = datetime.today().date()
 
-# ログインしているユーザーIDを取得する
-user_id = st.session_state["user"].user_id
+# セッション確認
+session_list = ["path", "year", "month", "today"]
+if any(session not in st.session_state for session in session_list):
+    st.switch_page("pages/main.py")
+    st.stop()
+
+# セッションからデータを取り出す
+user_id = st.session_state["user_id"]
 path = st.session_state["path"]
 
 colA, colB = st.columns([1,20])
@@ -46,14 +58,6 @@ col_1, col_2, col_3 = st.columns([5, 5, 4])
 
 # 日付設定
 with col_1:
-    if "month" not in st.session_state:
-        st.session_state["month"] = datetime.today().month
-    if "year" not in st.session_state:
-        st.session_state["year"] = datetime.today().year
-    if "today" not in st.session_state:
-        st.session_state["today"] = datetime.today().date()
-
-    
     # 日付変更設定
     col_1, col_2, col_3 = st.columns([0.5, 1.3, 1.1])
     with col_1:
@@ -83,7 +87,8 @@ with col_1:
 
     st.text("") # 空欄
 
-
+st.write("データの公開を設定できます。公開したいデータを選択し、都道府県を選択してください。")
+st.caption("※タイトルの入力は必須ではありません。")
 # 各週の処理
 weeks_data = []
 has_valid_data = False # ボタン表示設定

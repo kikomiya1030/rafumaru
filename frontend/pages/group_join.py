@@ -4,6 +4,7 @@ from items.create_header import create_header
 from items.set_config import set_con
 import requests
 import time
+import socket
 
 set_con()
 
@@ -32,11 +33,24 @@ hide_header()
 
 create_header("らふまる")
 
-# ユーザーがログインしてない場合
-if st.session_state["user_id"] == None:
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
     st.switch_page("pages/main.py")
 
-# ログインしているユーザーIDを取得する
+
+# パス設定
+if "path" not in st.session_state:
+    host = socket.gethostname()
+    ip = socket.gethostbyname(host)
+    st.session_state["path"] = ip
+
+# セッション確認
+session_list = ["path"]
+if any(session not in st.session_state for session in session_list):
+    st.switch_page("pages/main.py")
+    st.stop()
+
+# セッションからデータを取り出す
 user_id = st.session_state["user_id"]
 path = st.session_state["path"]
 
@@ -56,9 +70,9 @@ with col_2:
     with st.form(key="syousai"):
         # グループ作成フォーム
         group_id = st.text_input("グループ番号", max_chars=9)
-        st.text("9桁のグループ番号を入力してください。")
+        st.caption("9桁のグループ番号を入力してください。")
         group_password = st.text_input("パスワード", type="password")
-        st.text("パスワードは8桁以上16桁以下で入力してください。")
+        st.caption("パスワードは8桁以上16桁以下で入力してください。")
 
         # バリデーション用のフラグ
         is_valid = True

@@ -6,6 +6,7 @@ from items.create_header import create_header
 from items.set_config import set_con
 
 import requests
+import socket
 import datetime
 import random
 
@@ -17,30 +18,46 @@ hide_header()
 # ヘッダー
 create_header("らふまる")
 
-# ページタイトル
-colA, colB, colC, colD = st.columns([1, 4.5, 3, 8])
-
-# ログインしているユーザーID、前のページの年月を取得する
-user_id = st.session_state["user"].user_id
-year = st.session_state.get("year")
-month = st.session_state.get("month")
-path = st.session_state["path"]
-
-# ユーザーがログインしてない場合
-if "user_id" not in st.session_state:
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
     st.switch_page("pages/main.py")
 
-# 最初のアクセスする時、現在の日付を取得
-if "month" not in st.session_state:
-    st.session_state["month"] = datetime.today().month
+# パス設定
+if "path" not in st.session_state:
+    host = socket.gethostname()
+    ip = socket.gethostbyname(host)
+    st.session_state["path"] = ip
+
+# 最初のアクセスする時、現在の日付をセッションに保存する
 if "year" not in st.session_state:
     st.session_state["year"] = datetime.today().year
+if "month" not in st.session_state:
+    st.session_state["month"] = datetime.today().month
 if "today" not in st.session_state:
     st.session_state["today"] = datetime.today().date()
+
+# 画面用のセッション
 if "filter" not in st.session_state:
     st.session_state["filter"] = False
 if "calendar" not in st.session_state:
     st.session_state["calendar"] = False
+
+# セッション確認
+session_list = ["path", "year", "month", "today", "filter", "calendar"]
+if any(session not in st.session_state for session in session_list):
+    st.switch_page("pages/main.py")
+    st.stop()
+
+# セッションからデータを取り出す
+user_id = st.session_state["user_id"]
+path = st.session_state["path"]
+
+year = st.session_state["year"]
+month = st.session_state["month"]
+today = st.session_state["today"]
+
+# ページタイトル
+colA, colB, colC, colD = st.columns([1, 4.5, 3, 8])
 
 # ランダムカラー
 def get_random_color():
@@ -82,6 +99,7 @@ with colA:
             year = st.session_state["year"] - 1
             st.session_state["year"] = year
         st.session_state["month"] = month
+        del st.session_state["random_colors"]
         st.rerun()
 
 with colB:
@@ -98,6 +116,7 @@ with colC:
             month = 1
             year = st.session_state["year"] + 1
             st.session_state["year"] = year
+            del st.session_state["random_colors"]
         st.session_state["month"] = month
         st.rerun()
 
@@ -106,6 +125,7 @@ with colC2:
     calendar_btn = st.button("📅")
     if calendar_btn and st.session_state["calendar"] == True:
         st.session_state["calendar"] = False
+        del st.session_state["random_colors"]
         st.switch_page("pages/account_book_detail.py")
     elif calendar_btn and st.session_state["calendar"] == False:
         st.session_state["calendar"] = True
@@ -209,9 +229,10 @@ elif st.session_state["calendar"]:
             "headerToolbar": False, # 日付選択ボタンの表示を取り消す
             "editable": False,
             "events": events,
-            "dayMaxEventRows": True,
+            "dayMaxEventRows": 3,
+            "contentHeight": "auto"
             }
-        
+
         st_calendar.calendar(options=options)
 
 # 一般の詳細画面

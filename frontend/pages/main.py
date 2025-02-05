@@ -17,21 +17,20 @@ import json
 set_con()
 hide_header()
 
+# ヘッダー
+create_header("らふまる")
+
+# ユーザー確認
+if "user_id" not in st.session_state:
+    st.switch_page("pages/main.py")
+
 # パス設定
 if "path" not in st.session_state:
     host = socket.gethostname()
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
 
-# ヘッダー
-create_header("らふまる")
-
-# セッション確認
-#session_list = ["month", "year", "today", "calendar", "path"]
-#if not all(session_var in st.session_state for session_var in session_list):
-#    st.switch_page("pages/main.py")
-
-
+# 家計簿
 if st.session_state["user_id"] is not None:
     # メイン画面分割
     col_1, col_2, col_3 = st.columns([5, 5, 4])
@@ -97,7 +96,7 @@ if st.session_state["user_id"] is not None:
                 this_weekly_amount = st.text("¥ " + f"{all_amount.get('total_week_today'):,}")
                 this_daily_amount = st.text("¥ " + f"{all_amount.get('total_today'):,}")
             else:
-                monthly_amount = st.text("¥" + f"{all_amount.get('total_month')}")
+                monthly_amount = st.text("¥" + f"{all_amount.get('total_month'):,}")
 
     # グラフ
     with col_2:
@@ -178,8 +177,9 @@ if st.session_state["user_id"] is not None:
                     message.error("最大15億円まで入力可能です。")
                 elif selected_category_id is None:
                     message.error("カテゴリを入力してください。")
-                elif len(memo) > 200:
-                    message.error("200文字まで入力可能です。")
+                elif memo:
+                    if memo > 200:
+                        message.error("200文字まで入力可能です。")
                 else: # 登録
                     message.empty() # エラーメッセージがあれば消す
                     url = f"http://{path}:8000/api/account_book_input/" # ローカル 
@@ -190,6 +190,8 @@ if st.session_state["user_id"] is not None:
                         st.switch_page("pages/main.py")
                     elif response.status_code == 400:
                         st.switch_page("error.py")
+
+# 紹介
 else:
     col_left, col_mid, col_right = st.columns([2,10,2])
     with col_mid:

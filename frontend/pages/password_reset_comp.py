@@ -3,10 +3,18 @@ from items.hide_default_header import hide_header
 from items.create_header import create_header
 from items.set_config import set_con
 
+import socket
+
 set_con()
 
 hide_header()
 create_header("らふまる")
+
+# パス設定
+if "path" not in st.session_state:
+    host = socket.gethostname()
+    ip = socket.gethostbyname(host)
+    st.session_state["path"] = ip
 
 submit_btn = False
 col_1, col_2, col_3 = st.columns([1, 8, 1])

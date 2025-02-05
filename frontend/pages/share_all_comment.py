@@ -21,24 +21,31 @@ hide_header()
 create_header("らふまる")
 
 # ユーザー確認
-user_id = st.session_state["user_id"]
-path = st.session_state["path"]
-if st.session_state["user_id"] == None:
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
     st.switch_page("pages/main.py")
- 
+
+# パス設定
 if "path" not in st.session_state:
     host = socket.gethostname()
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
-url = st.session_state["path"]
 
-# セッションからすべてのデータを取得する
-check_user = st.session_state['check_user']
-check_title = st.session_state['check_title']
-check_year = st.session_state['check_year']
-check_month = st.session_state['check_month']
-check_week = st.session_state['check_week']
-check_public_no = st.session_state['check_public_no']
+# セッション確認
+session_list = ["path", "check_user", "check_title", "check_year", "check_month", "check_week", "check_public_no", "check_unique_key"]
+if any(session not in st.session_state for session in session_list):
+    st.switch_page("pages/main.py")
+    st.stop()
+
+# セッションからデータを取り出す
+user_id = st.session_state["user_id"]
+path = st.session_state["path"]
+
+check_user = st.session_state["check_user"]
+check_title = st.session_state["check_title"]
+check_year = st.session_state["check_year"]
+check_month = st.session_state["check_month"]
+check_week = st.session_state["check_week"]
+check_public_no = st.session_state["check_public_no"]
 check_unique_key = st.session_state["check_unique_key"] + "-1"
 
 col_A, col_B = st.columns([1,20])

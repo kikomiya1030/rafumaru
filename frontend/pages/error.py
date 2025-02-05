@@ -10,6 +10,12 @@ hide_header()
 # ヘッダー
 create_header("らふまる")
 
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
+    st.switch_page("pages/main.py")
+
+# セッションからデータを取り出す
+user_id = st.session_state["user_id"]
 
 submit_btn = False
 col_1, col_2, col_3 = st.columns([1, 8, 1])

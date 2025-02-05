@@ -5,6 +5,7 @@ from items.set_config import set_con
 import datetime
 import requests
 import time
+import socket
 
 set_con()
 
@@ -34,25 +35,37 @@ hide_header()
 
 create_header("らふまる")
 
-# ユーザーがログインしてない場合
-if "user_id" not in st.session_state:
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
     st.switch_page("pages/main.py")
 
-# セッションからすべてのデータを取得する
-update_week = st.session_state['update_week']
-update_year = st.session_state['update_year']
-update_month = st.session_state['update_month']
-update_shareditem_id = st.session_state['shareditem_id']
-update_category_id = st.session_state['category_id']
-update_amount = st.session_state['amount']
-update_date = st.session_state['date']
-update_memo = st.session_state['memo']
+# パス設定
+if "path" not in st.session_state:
+    host = socket.gethostname()
+    ip = socket.gethostbyname(host)
+    st.session_state["path"] = ip
 
-# ログインしているユーザーIDを取得する
+# セッション確認
+session_list = ["path", "group_id", "income_input", "update_year", "update_month", "update_week", "shareditem_id", "category_id", "amount", "date", "memo"]
+if any(session not in st.session_state for session in session_list):
+    st.switch_page("pages/main.py")
+    st.stop()
+
+# セッションからすべてのデータを取得する
 user_id = st.session_state["user_id"]
 path = st.session_state["path"]
 group_id = st.session_state["group_id"]
 income_input = st.session_state["income_input"]
+
+update_year = st.session_state["update_year"]
+update_month = st.session_state["update_month"]
+update_week = st.session_state["update_week"]
+update_shareditem_id = st.session_state["shareditem_id"]
+update_category_id = st.session_state["category_id"]
+update_amount = st.session_state["amount"]
+update_date = st.session_state["date"]
+update_memo = st.session_state["memo"]
+
 
 colA, colB = st.columns([1,20])
 with colA:

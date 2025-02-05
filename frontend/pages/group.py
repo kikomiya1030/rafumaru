@@ -14,21 +14,27 @@ hide_header()
 
 create_header("らふまる")
 
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
+    st.switch_page("pages/main.py")
+
 # パス設定
 if "path" not in st.session_state:
     host = socket.gethostname()
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
 
-# ユーザーがログインしてない場合
-if "user_id" not in st.session_state:
-    st.switch_page("pages/main.py")
-
-# 削除ボタンの初期状態の管理
+# 削除ボタンの初期設定
 if "show_confirm_delete" not in st.session_state:
-    st.session_state["show_confirm_delete"] = False
+    st.session_state["show_confirm_delete"] = False    
 
-# ログインしているユーザーIDを取得する
+# セッション確認
+session_list = ["path", "show_confirm_delete"]
+if any(session not in st.session_state for session in session_list):
+    st.switch_page("pages/main.py")
+    st.stop()
+
+# セッションからデータを取り出す
 user_id = st.session_state["user_id"]
 path = st.session_state["path"]
 
@@ -51,7 +57,9 @@ if group_data == []:
 if "user_id" in st.session_state:
     # タイトル設定
     st.subheader("共同家計簿選択")
-
+    st.write("既に加入している共同家計簿を見られます。")
+    st.write("")
+    st.write("")
     # 項目名の設定
     colA, colB, colC = st.columns([8, 1, 3]) 
     with colA:
@@ -99,6 +107,7 @@ if "user_id" in st.session_state:
                                 st.session_state['group_name'] = group_name
                                 st.session_state['income_input'] = income_input
                                 st.session_state["invite"] = False
+                                st.session_state["chat_box"] = False
                                 st.switch_page("pages/group_main.py")
 
                     with col_3:

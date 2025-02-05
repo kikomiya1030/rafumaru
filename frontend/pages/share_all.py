@@ -18,18 +18,25 @@ hide_header()
 # ヘッダー
 create_header("らふまる")
 
+# ユーザー確認
+if st.session_state["user_id"] is None or "user_id" not in st.session_state:
+    st.switch_page("pages/main.py")
+
+# パス設定
 if "path" not in st.session_state:
     host = socket.gethostname()
     ip = socket.gethostbyname(host)
     st.session_state["path"] = ip
 
-# ユーザー確認
+# セッション確認
+session_list = ["path"]
+if any(session not in st.session_state for session in session_list):
+    st.switch_page("pages/main.py")
+    st.stop()
+
+# セッションからデータを取り出す
 user_id = st.session_state["user_id"]
 path = st.session_state["path"]
-if st.session_state["user_id"] == None:
-    st.switch_page("pages/main.py")
-
-url = st.session_state["path"]
 
 colA, colB, colC, colD = st.columns([1, 4.5, 3, 8])
 col_1, col_2, col_3 = st.columns([9, 1, 4])
@@ -48,7 +55,7 @@ with col_1:
     weekly_data = response.json()
 
     if not weekly_data or len(weekly_data) == 0:
-        st.markdown('データが存在してません')
+        st.markdown('データを公開しているユーザーがいません！')
     else:
         # 都道府県の検索
         if st.session_state["selected_prefecture"]:
@@ -59,7 +66,6 @@ with col_1:
             filtered_data = {k: v for k, v in filtered_data.items() if v}
         else:
             filtered_data = weekly_data
-
 
         st.header('公開中！')
         st.write('あなたの周りの人は、どんな生活していますか？')
@@ -164,7 +170,8 @@ with col_3:
         st.subheader("条件検索")
 
         # カレンダーを選択する
-        selected_date = st.date_input("日付", value=None)   
+        selected_date = st.date_input("日付", value=None)  
+        st.caption("※選択された週のデータを表示する") 
         
 
         # 都道府県を選択する
