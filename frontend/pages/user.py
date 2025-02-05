@@ -125,17 +125,20 @@ if st.session_state["notice"] == False:
                 st.caption("登録されている内容を変更できます。")
                 msg = st.empty()
                 if st.form_submit_button("修正"):
-                    rev_url = f"http://{path}:8000/api/rev_account/"
-                    rev_response = requests.post(rev_url, json={"user_id": user_id, "email": email, "nickname": nickname})
-                    if rev_response.status_code == 200:
-                        msg.success("個人情報を更新しました。")
-                        time.sleep(1)
-                        st.session_state["nickname"] = nickname
-                        st.session_state["mail_address"] = email
-                        st.session_state["info_rev"] = False
-                        st.switch_page("pages/user.py")
+                    if nickname == "" or email == "":
+                        msg.error("ニックネーム、またはメールアドレスを入力してください。")
                     else:
-                        st.switch_page("pages/error.py")
+                        rev_url = f"http://{path}:8000/api/rev_account/"
+                        rev_response = requests.post(rev_url, json={"user_id": user_id, "email": email, "nickname": nickname})
+                        if rev_response.status_code == 200:
+                            msg.success("個人情報を更新しました。")
+                            time.sleep(1)
+                            st.session_state["nickname"] = nickname
+                            st.session_state["mail_address"] = email
+                            st.session_state["info_rev"] = False
+                            st.switch_page("pages/user.py")
+                        else:
+                            st.switch_page("pages/error.py")
 
 
 # 通知画面
