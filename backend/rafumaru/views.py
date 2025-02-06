@@ -330,8 +330,6 @@ def notice_gp(request):
         if match:
             gp_id = match.group(1)  # Group ID
             gp_pw = match.group(2)  # Group Password
-            print(f"Group ID: {gp_id}")
-            print(f"Group Password: {gp_pw}")
         
         gp_confirm = Gp.objects.filter(gp_id=gp_id, gp_pw=gp_pw)
         if not gp_confirm.exists():
