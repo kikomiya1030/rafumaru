@@ -169,6 +169,7 @@ if st.session_state["user_id"] is not None:
 
             # エラー確認
             if submit:
+                memo_list = list(memo)
                 if date == None:
                     message.error("日付を入力してください。")
                 elif amount == None:
@@ -177,9 +178,8 @@ if st.session_state["user_id"] is not None:
                     message.error("最大15億円まで入力可能です。")
                 elif selected_category_id is None:
                     message.error("カテゴリを入力してください。")
-                elif memo:
-                    if memo > 200:
-                        message.error("200文字まで入力可能です。")
+                elif len(memo_list) > 200:
+                    message.error("200文字まで入力可能です。")
                 else: # 登録
                     message.empty() # エラーメッセージがあれば消す
                     url = f"http://{path}:8000/api/account_book_input/" # ローカル 
