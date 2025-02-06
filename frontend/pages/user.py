@@ -189,9 +189,10 @@ else:
                                 join_response = requests.post(join_url, json={"user_id": user_id, "notice_id": notice_id})
                                 if join_response.status_code == 201:
                                     msg.error("グループが存在していません。この通知削除します。")
+                                    time.sleep(1)
                                     delete_url = f"http://{path}:8000/api/notice_delete/"  # ローカル
                                     delete_response = requests.post(delete_url, json={"user_id": user_id, "notice_id": notice_id})
-                                    if reject_response.status_code == 200:
+                                    if delete_response.status_code == 200:
                                         st.switch_page("pages/user.py")
                                 if join_response.status_code == 200:
                                     group_data = join_response.json()

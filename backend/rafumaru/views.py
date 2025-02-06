@@ -324,7 +324,7 @@ def notice_gp(request):
     try:
         item = Notice.objects.get(re_user_id=re_user_id, notice_id=notice_id)
 
-        pattern = r"グループ番号は(\d+)、パスワードは(\d+)です。"
+        pattern = r"グループ番号は\s*(\d+)\s*、パスワードは\s*(\d+)\s*です。"
         match = re.search(pattern, item.notice_content)
 
         if match:
@@ -333,9 +333,9 @@ def notice_gp(request):
             print(f"Group ID: {gp_id}")
             print(f"Group Password: {gp_pw}")
         
-        gp_confirm = Gp.objects.filter(gp_id=gp_id)
+        gp_confirm = Gp.objects.filter(gp_id=gp_id, gp_pw=gp_pw)
         if not gp_confirm.exists():
-            return Response(status=201)
+            return Response({"status": "success"}, status=201)
         
         return Response({"gp_id": gp_id, "gp_pw": gp_pw}, status=200)
     except Notice.DoesNotExist:

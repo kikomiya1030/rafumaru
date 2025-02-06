@@ -211,6 +211,26 @@ if "user_id" in st.session_state:
                 # 入力
                     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     user_message = messages.chat_message("user")
+                    original_prompt = prompt
+                    nobasi = False
+                    nobasi_count = 0
+                    if "ー" in prompt:
+                        nobasi = list(prompt)
+                        for i in nobasi:
+                            print(i)
+                            if i == "ー":
+                                nobasi_count += 1
+                        prompt = prompt.replace("ー", "")
+                        print(prompt)
+                        nobasi = True
+                    if "死ね" in prompt or "しね" in prompt or "シネ" in prompt or "4ね" in prompt or "４ね" in prompt or "馬鹿" in prompt or "ばか" in prompt or "baka" in prompt or "バカ" in prompt or "あほ" in prompt in prompt or "sine" in prompt or "shine" in prompt or "アホ" in prompt or "きえろ" in prompt or "消えろ" in prompt or "キエロ" in prompt or "ボケ" in prompt or "ぼけ" in prompt or "まぬけ" in prompt or "間抜け" in prompt or "aho" in prompt or "kiero" in prompt in prompt or "boke" in prompt or "manuke" in prompt or "くそ" in prompt or "糞" in prompt or "クソ" in prompt or "kuso" in prompt or "がき" in prompt or "ガキ" in prompt or "餓鬼" in prompt or "gaki" in prompt or "ぶす" in prompt or "ブス" in prompt or "busu" in prompt or "殺す" in prompt or "ころす" in prompt or "コロス" in prompt or "korosu" in prompt or "かす" in prompt or "カス" in prompt or "stupid" in prompt or "fuck" in prompt or "きも" in prompt or "キモ" in prompt:
+                        prompt = prompt.replace("死ね", "**").replace("しね", "**").replace("シネ", "**").replace("4ね", "**").replace("４ね", "**").replace("馬鹿", "**").replace("ばか", "**").replace("baka", "****").replace("sine", "****").replace("shine", "****").replace("バカ", "**").replace("あほ", "**").replace("アホ", "**").replace("きえろ", "***").replace("消えろ", "***").replace("キエロ", "***").replace("ボケ", "**").replace("ぼけ", "**").replace("まぬけ", "***").replace("間抜け", "***").replace("aho", "***").replace("kiero", "*****").replace("boke", "****").replace("manuke", "******").replace("くそ", "**").replace("糞", "*").replace("クソ", "**").replace("kuso", "****").replace("がき", "**").replace("ガキ", "**").replace("餓鬼", "**").replace("gaki", "****").replace("busu", "****").replace("ブス", "**").replace("ぶす", "**").replace("殺す", "**").replace("ころす", "***").replace("コロス", "***").replace("korosu", "******").replace("かす", "**").replace("カス", "**").replace("stupid", "******").replace("fuck", "****").replace("stupid", "**").replace("きも", "**").replace("キモ", "**")
+                        if nobasi:
+                            asu =  "*" * nobasi_count
+                            prompt += asu
+                    else:
+                        if nobasi == True:
+                            prompt = original_prompt
                     user_message.write(f"{nickname}: {prompt}")
                     user_message.caption(current_time)
 
