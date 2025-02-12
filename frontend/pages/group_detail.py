@@ -203,8 +203,7 @@ elif st.session_state["gp_calendar"]:
     col2, col3, col4 = st.columns([1,10,1])
     with col3:
         # カレンダーの設定
-        selected_date = datetime.date(st.session_state["year"], st.session_state["month"], 1)
-
+        selected_date = datetime.date(st.session_state["year"], st.session_state["month"], 1)     
         events = []
 
         for week_num in weekly_data:
@@ -223,7 +222,7 @@ elif st.session_state["gp_calendar"]:
             "editable": False,
             "events": events,
             "dayMaxEventRows": 3,
-            "contentHeight": "auto"
+            "contentHeight": "auto",
             }
         
         st_calendar.calendar(options=options)
@@ -263,7 +262,7 @@ else:
 
                                 # 週総計
                                 weekly_total = weekly_totals.get(str(week_num), 0)
-                                st.text(f"小計: ¥{weekly_total}")
+                                st.text(f"小計: ¥{weekly_total:,}")
 
                                 # 更新ボタン
                                 if st.button(f"更新", key=f"week_button{week_num}", use_container_width=True):
@@ -320,28 +319,44 @@ else:
         all_amount = gp_response.json()
 
         with st.container(border=True):
-            st.write("カテゴリ別の収支")
+            st.write("**カテゴリ別の収支**")
             st.markdown('---')
-            colD, colE = st.columns([5,5])
 
             # 収入入力可・不可設定による、収入(category_id=1)を表示するかどうか
             filtered_data = category_total_data if income_input else [
                     item for item in category_total_data if item.get("category_id") != 1
                 ]
-
-            # カテゴリ
-            with colD:
-                for item in filtered_data:
-                    category_id = item.get("category_id", "Unknown")
-                    category_name = item.get("category_name", "Unknown")
-                    st.write(category_name)
-                st.markdown('---')
-                st.write(f"**総計**")
-            # 収支
-            with colE:
-                for item in filtered_data:
-                    total_amount = item.get("total_amount", 0)
-                    st.write(f"¥{total_amount:,}")
-                st.markdown("")
-                monthly_amount = st.write(f"**¥{all_amount.get('total_month'):,}**")
             
+            table_html = """
+            <style>
+                .custom-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                .custom-table td {
+                    padding: 8px;
+                    text-align: left;
+                    border: none !important;
+                }
+                .custom-table tr {
+                    border: none !important;
+                }
+            </style>
+            <div class="outer-container">
+                <table class="custom-table">
+            """
+
+            for item in filtered_data:
+                category_name = item.get("category_name", "Unknown")
+                total_amount = f"¥{item.get('total_amount', 0):,}"
+                table_html += f"<tr><td>{category_name}</td><td>{total_amount}</td></tr>"
+
+            table_html += """<tr class="separator-row"><td colspan="2"><hr/></td></tr>"""
+
+            # 総計
+            total_monthly = f"¥{all_amount.get('total_month'):,}"
+            table_html += f"""<tr><td><strong>総計</strong></td><td><strong>{total_monthly}</strong></td></tr>"""
+            
+            table_html += "</table></div>"
+
+            st.markdown(table_html, unsafe_allow_html=True)

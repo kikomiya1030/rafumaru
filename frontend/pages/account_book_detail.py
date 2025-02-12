@@ -332,28 +332,42 @@ else:
                 all_amount = account_book_response.json()
 
                 with st.container(border=True):
-                    st.write("**今月のカテゴリ別の収支**")
+                    st.write("**カテゴリ別の収支**")
                     st.markdown('---')
+
+                    table_html = """
+                    <style>
+                        .custom-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+                        .custom-table td {
+                            padding: 8px;
+                            text-align: left;
+                            border: none !important;
+                        }
+                        .custom-table tr {
+                            border: none !important;
+                        }
+                    </style>
+                    <div class="outer-container">
+                        <table class="custom-table">
+                    """
+
+                    for item in category_total_data:
+                        category_name = item.get("category_name", "Unknown")
+                        total_amount = f"¥{item.get('total_amount', 0):,}"
+                        table_html += f"<tr><td>{category_name}</td><td>{total_amount}</td></tr>"
+
+                    table_html += """<tr class="separator-row"><td colspan="2"><hr/></td></tr>"""
+
+                    # 総計
+                    total_monthly = f"¥{all_amount.get('total_month'):,}"
+                    table_html += f"""<tr><td><strong>総計</strong></td><td><strong>{total_monthly}</strong></td></tr>"""
                     
-                    colD, colE = st.columns([5,5])
-                    if category_total_data:
-                        # カテゴリ
-                        with colD:
-                            for item in category_total_data:
-                                    category_name = item.get("category_name", "Unknown")
-                                    st.write(category_name)
-                            st.markdown('---')
-                            st.write(f"**総計**")
-                        # 収支
-                        with colE:
-                            for item in category_total_data:
-                                total_amount = item.get("total_amount", 0)
-                                st.write(f"¥{total_amount:,}")
-                            st.markdown("")
-                            monthly_amount = st.write(f"**¥{all_amount.get('total_month'):,}**")
-                        
-                    else:
-                        st.write("データなし")
+                    table_html += "</table></div>"
+
+                    st.markdown(table_html, unsafe_allow_html=True)
                     
 
         except ValueError as e:

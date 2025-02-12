@@ -57,7 +57,7 @@ if group_data == []:
 if "user_id" in st.session_state:
     # タイトル設定
     st.subheader("共同家計簿選択")
-    st.write("既に加入している共同家計簿を見られます。")
+    st.caption("※既に加入している共同家計簿を見られます。")
     st.write("")
     st.write("")
     # 項目名の設定
@@ -124,7 +124,7 @@ if "user_id" in st.session_state:
                 if st.session_state[modal_key]:
                     with modal.container():
                         st.write("このグループを削除しますか？")
-
+                        modal_msg = st.empty()
                         col_confirm, col_cancel = st.columns([1, 9])
                         with col_confirm:
                             # はいをクリックする場合、削除を実行する
@@ -132,10 +132,10 @@ if "user_id" in st.session_state:
                                 delete_url = f"http://{path}:8000/api/group_delete/"
                                 delete_response = requests.post(delete_url, json={"user_id": user_id, "group_id": group_id})
                                 if delete_response.status_code == 200:
-                                    st.success("削除されました。")
+                                    modal_msg.success("削除しました。")
                                     time.sleep(1)
                                 else:
-                                    st.error("削除に失敗しました。")
+                                    modal_msg.error("削除に失敗しました。")
                                 st.session_state[modal_key] = False
                                 st.switch_page("pages/group.py")
                         with col_cancel:

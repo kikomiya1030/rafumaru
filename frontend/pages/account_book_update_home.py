@@ -58,7 +58,17 @@ with colA:
         del st.session_state["random_colors"]
         st.switch_page("pages/account_book_detail.py")
 with colB:
-    st.subheader(f"{update_year}年 {update_month}月 第{update_week}週の詳細")
+    if update_week == 1:
+        sub = "1日～7日"
+    elif update_week == 2:
+        sub = "8日～14日"
+    elif update_week == 3:
+        sub = "15日～21日"
+    elif update_week == 4:
+        sub = "22日～28日"
+    else:
+        sub = "29日～"
+    st.subheader(f"{update_year}年{update_month}月{sub}の詳細")
 
 
 # カラム

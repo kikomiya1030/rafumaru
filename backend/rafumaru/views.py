@@ -1156,7 +1156,7 @@ def public_all_contents(request):
                 "user_id": user.user_id,
                 "nickname": user.nickname,
                 "public_no": entry.public_no,
-                "title": public.title,
+                "title": public.title if public.title else "タイトルなし",
                 "date": entry.date,
                 "item_no": entry.item_no,
                 "category_id": entry.category_id,
@@ -1247,7 +1247,6 @@ def public_status(request):
                 "public_no": clean_value(public_no),
                 "prefecture_id": prefecture_id,
             }
-
 
             return Response(response_data, status=200)
         # データなし

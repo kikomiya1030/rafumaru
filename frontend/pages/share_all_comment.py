@@ -52,6 +52,8 @@ col_A, col_B = st.columns([1,20])
 with col_A:
     if st.button("⬅︎", key="back"):
         st.switch_page("pages/share_all.py")
+    if st.button("🔃"):
+        st.switch_page("pages/share_all_comment.py")
 with col_B:
     st.subheader(check_title)
 
@@ -77,26 +79,44 @@ with col_mid:
             # Pie インスタンスを作成してグラフを表示
             pie = Pie()
             pie.create_chart(data, unique_key=check_unique_key, height=450)
+            
     with col_mid2:
         with st.container():
             st.write("")
             st.write("")
-            st.write("カテゴリ別の収支")
+            st.write("**カテゴリ別の収支**")
             st.markdown('---')
-            colD, colE = st.columns(2)
 
-            # カテゴリ
-            with colD:
-                for item in category_total_data:
-                        if item["category_id"] != 1:
-                            st.write(item["category_name"])
-            # 収支
-            with colE:
-                for item in category_total_data:
-                    if item["category_id"] != 1:
-                        #st.write(f"¥{total_amount:,}")
-                        tta = item["total_amount"]
-                        st.write(f"¥{tta:,}")
+            table_html = """
+            <style>
+                .custom-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                .custom-table td, .custom-table th {
+                    padding: 8px;
+                    text-align: left;
+                    border: none !important;
+                }
+
+                .custom-table tr {
+                    border: none !important;
+                }
+
+            </style>
+            <div class="outer-container">
+                <table class="custom-table">
+            """
+
+            for item in category_total_data:
+                if item["category_id"] != 1:
+                    category_name = item.get("category_name", "Unknown")
+                    total_amount = f"¥{item.get('total_amount', 0):,}"
+                    table_html += f"<tr><td>{category_name}</td><td>{total_amount}</td></tr>"
+
+            table_html += "</table></div>"
+
+            st.markdown(table_html, unsafe_allow_html=True)
 
 # コメント入力欄
 col_1, col_2, col_3, col_4 = st.columns([2,10,4,3])
@@ -107,8 +127,30 @@ with col_2:
 with col_3:
     st.write("")
     st.write("")
+
+    # NGリスト
+    NG_WORDS = [
+        "死ね", "しね", "シネ", "4ね", "４ね", "馬鹿", "ばか", "baka", "バカ", "あほ", "アホ", 
+        "きえろ", "消えろ", "キエロ", "ボケ", "ぼけ", "まぬけ", "間抜け", "aho", "kiero", 
+        "boke", "manuke", "くそ", "糞", "クソ", "kuso", "がき", "ガキ", "餓鬼", "gaki", "ぶす", 
+        "ブス", "busu", "殺す", "ころす", "コロス", "korosu", "かす", "カス", "stupid", 
+        "fuck", "きも", "キモ"
+    ]
+    
+    # NG確認
+    def contains_ng_word(text):
+        temp_text = text.replace("ー", "")  # Remove all "ー"
+        for word in NG_WORDS:
+            if word in temp_text:
+                return True
+        return False
+    
     if st.button("Ok", key="submit", use_container_width=True):
-        if len(comment) > 0:
+        if len(comment) > 100:
+            message.error("コメントは100文字以下になります。")
+        elif contains_ng_word(comment):
+            message.error("不適切な言葉が含まれています。")
+        elif len(comment) > 0:
             comment_url = f"http://{path}:8000/api/public_comment_input/"  # ローカル
             comment_response = requests.post(comment_url, json={"user_id": user_id, "comment": comment, "public_no": check_public_no})
             if comment_response.status_code == 200:

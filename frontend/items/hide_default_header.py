@@ -66,6 +66,9 @@ def hide_header():
                         box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.3); /* ホバー時の影 */
                         cursor: pointer; /* ポインタ変更 */
                     }
+                    .st-key-browser_engine{
+                        display: none;
+                    }
                    
                     </style>
     """

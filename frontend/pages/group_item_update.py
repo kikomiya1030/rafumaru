@@ -80,7 +80,6 @@ with col_1:
     pass
 with col_2:
     with st.form(key="detail"):
-        # ラベルをHTMLで手動で追加
         # 日付
         update_date = datetime.datetime.strptime(update_date, "%Y-%m-%d").date()
         date = st.date_input(label="日付", value=update_date)
@@ -97,11 +96,11 @@ with col_2:
         # デフォルトカテゴリを取得する
         default_index = next((i for i, (_, cat_id) in enumerate(categorys) if cat_id == update_category_id), 0)
         selected_category_name, selected_category_id = st.selectbox(
-                label="カテゴリ",
-                options=categorys,
-                format_func=lambda x: x[0],
-                key="category",
-                index=default_index # デフォルト表示
+            label="カテゴリ",
+            options=categorys,
+            format_func=lambda x: x[0],
+            key="category",
+            index=default_index # デフォルト表示
         )
         
         # 金額

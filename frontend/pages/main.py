@@ -3,6 +3,7 @@ import streamlit as st
 import time
 from streamlit_elements import elements
 from streamlit_lottie import st_lottie
+import pandas as pd
 
 from pages.main_items.pie import Pie
 
@@ -16,13 +17,12 @@ import json
 
 set_con()
 hide_header()
-
 # ヘッダー
 create_header("らふまる")
 
 # ユーザー確認
 if "user_id" not in st.session_state:
-    st.switch_page("pages/main.py")
+    st.session_state["user_id"] = None
 
 # パス設定
 if "path" not in st.session_state:
@@ -76,27 +76,53 @@ if st.session_state["user_id"] is not None:
 
         st.text("") # 空欄
 
-        # 画面分割
-        col_4, col_5 = st.columns([3,5])
+        # 総計表示
         today = st.session_state["today"] # 今日の日付を取得する
         url = f"http://{path}:8000/api/account_book/" # ローカル 
         response = requests.post(url, json={"user_id": user_id, "year": current_year, "month": current_month, "today" : today.isoformat()})
         all_amount = response.json()
-        with col_4:
-            if datetime.today().month == st.session_state["month"] and datetime.today().year == st.session_state["year"]:
-                st.text("今月")
-                st.text("今週")
-                st.text("今日")
-            else:
-                st.text("当月")
-        # データベースから収支を取り出す
-        with col_5:
-            if datetime.today().month == st.session_state["month"] and datetime.today().year == st.session_state["year"]:
-                this_monthly_amount = st.text("¥ " + f"{all_amount.get('total_month'):,}")
-                this_weekly_amount = st.text("¥ " + f"{all_amount.get('total_week_today'):,}")
-                this_daily_amount = st.text("¥ " + f"{all_amount.get('total_today'):,}")
-            else:
-                monthly_amount = st.text("¥" + f"{all_amount.get('total_month'):,}")
+
+        # テーブル形式でデータ表示
+        if datetime.today().month == st.session_state["month"] and datetime.today().year == st.session_state["year"]:
+            data = [
+                ["今月", f"¥ {all_amount.get('total_month'):,}"],
+                ["今週", f"¥ {all_amount.get('total_week_today'):,}"],
+                ["今日", f"¥ {all_amount.get('total_today'):,}"]
+            ]
+        else:
+            data = [
+                ["📅当月", f"¥ {all_amount.get('total_month'):,}"]
+            ]
+        
+        # テーブル表示
+        html_table = """
+        <style>
+            table {
+                border-collapse: collapse;  /* Prevents any inherited borders */
+                width: 100%;
+            }
+            td {
+                padding: 8px;
+                text-align: left;
+                border: none !important;  /* Ensures no border at all */
+            }
+            tr {
+                border: none !important;  /* Removes any top/bottom borders */
+            }
+        </style>
+        <table>
+        """
+
+        for row in data:
+            html_table += "<tr>"
+            for cell in row:
+                html_table += f"<td>{cell}</td>"
+            html_table += "</tr>"
+
+        html_table += "</table>"
+
+        st.markdown(html_table, unsafe_allow_html=True)
+        #st.table(data)
 
     # グラフ
     with col_2:
@@ -123,12 +149,9 @@ if st.session_state["user_id"] is not None:
         col_6, col_7, col_8 = st.columns([6, 3, 5]) # ボタンの位置設定
         with col_7 :
             # 詳細画面に遷移
-            if sum(item_list) == 0:
-                pass
-            else:
-                if st.button("詳細"):
-                    st.session_state["calendar"] = False
-                    st.switch_page("pages/account_book_detail.py") 
+            if st.button("詳細"):
+                st.session_state["calendar"] = False
+                st.switch_page("pages/account_book_detail.py") 
 
     # 収支入力フォーム
     with col_3:
@@ -137,7 +160,9 @@ if st.session_state["user_id"] is not None:
             # 日付入力
             date = st.date_input('日付', value="today")
             # 金額入力
-            amount = st.number_input('金額', value=None, min_value=0, max_value=1500000000, step=1)
+            amount = st.number_input('金額', value=None, min_value=0, step=1)
+            print()
+            print(user_id, amount)
             st.markdown("""
                 <style>
                 .stNumberInput > div > div > button {
@@ -169,21 +194,22 @@ if st.session_state["user_id"] is not None:
 
             # エラー確認
             if submit:
-                memo_list = list(memo)
                 if date == None:
                     message.error("日付を入力してください。")
                 elif amount == None:
                     message.error("金額を入力してください。")
                 elif amount > 1500000000:
                     message.error("最大15億円まで入力可能です。")
+                elif amount == 0:
+                    message.error("最大15億円まで入力可能です。")
                 elif selected_category_id is None:
                     message.error("カテゴリを入力してください。")
-                elif len(memo_list) > 200:
-                    message.error("200文字まで入力可能です。")
                 else: # 登録
                     message.empty() # エラーメッセージがあれば消す
                     url = f"http://{path}:8000/api/account_book_input/" # ローカル 
                     response = requests.post(url, data={"user_id": user_id, "date": date.isoformat(), "amount": amount, "category_id": selected_category_id, "memo": memo})
+                    print(user_id, amount)
+                    print()
                     if response.status_code == 200:
                         message.success("収支を登録しました。")
                         time.sleep(1)

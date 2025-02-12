@@ -58,7 +58,17 @@ with colA:
     if st.button("⬅︎", key="back"):
         st.switch_page("pages/group_detail.py")
 with colB:
-    st.subheader(f"{update_year}年 {update_month}月 第{update_week}週の詳細")
+    if update_week == 1:
+        sub = "1日～7日"
+    elif update_week == 2:
+        sub = "8日～14日"
+    elif update_week == 3:
+        sub = "15日～21日"
+    elif update_week == 4:
+        sub = "22日～28日"
+    else:
+        sub = "29日～"
+    st.subheader(f"{update_year}年{update_month}月{sub}の詳細")
 
 colA, colB, colC, colD = st.columns([1, 1.3, 1, 8])
 
@@ -95,7 +105,6 @@ for item in week_data:
     # ユーザー
     with col1:
         st.subheader(item.get('nickname', None))
-        st.session_state['nickname'] = item['nickname']
 
     # 日付
     with col3:

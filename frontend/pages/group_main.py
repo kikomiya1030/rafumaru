@@ -5,6 +5,7 @@ import requests
 import socket
 import time
 import pytz
+import re
 
 from streamlit_elements import elements
 from pages.main_items.pie import Pie
@@ -139,28 +140,51 @@ if "user_id" in st.session_state:
 
 
         # 画面分割
-        col_4, col_5 = st.columns([3,5])
         today = st.session_state["today"] # 今日の日付を取得する
         url = f"http://{path}:8000/api/share_account_book/" # ローカル 
         response = requests.post(url, json={"user_id": user_id, "group_id": group_id, "year": current_year, "month": current_month, "today" : today.isoformat()})
         all_amount = response.json()
-        with col_4:
-            if datetime.today().month == st.session_state["month"] and datetime.today().year == st.session_state["year"]:
-                st.text("今月")
-                st.text("今週")
-                st.text("今日")
-                st.write("")
-            else:
-                st.text("当月")
-                st.write("")
-        # データベースから収支を取り出す
-        with col_5:
-            if datetime.today().month == st.session_state["month"] and datetime.today().year == st.session_state["year"]:
-                this_monthly_amount = st.text("¥ " + f"{all_amount.get('total_month'):,}")
-                this_weekly_amount = st.text("¥ " + f"{all_amount.get('total_week_today'):,}")
-                this_daily_amount = st.text("¥ " + f"{all_amount.get('total_today'):,}")
-            else:
-                monthly_amount = st.text("¥" + f"{all_amount.get('total_month'):,}")
+        if datetime.today().month == st.session_state["month"] and datetime.today().year == st.session_state["year"]:
+            data = [
+                ["今月", f"¥ {all_amount.get('total_month'):,}"],
+                ["今週", f"¥ {all_amount.get('total_week_today'):,}"],
+                ["今日", f"¥ {all_amount.get('total_today'):,}"]
+            ]
+        else:
+            data = [
+                ["📅当月", f"¥ {all_amount.get('total_month'):,}"]
+            ]
+        
+        # テーブル表示
+        html_table = """
+        <style>
+            table {
+                border-collapse: collapse;  /* Prevents any inherited borders */
+                width: 100%;
+            }
+            td {
+                padding: 8px;
+                text-align: left;
+                border: none !important;  /* Ensures no border at all */
+            }
+            tr {
+                border: none !important;  /* Removes any top/bottom borders */
+            }
+        </style>
+        <table>
+        """
+
+        for row in data:
+            html_table += "<tr>"
+            for cell in row:
+                html_table += f"<td>{cell}</td>"
+            html_table += "</tr>"
+
+        html_table += "</table>"
+
+        st.markdown(html_table, unsafe_allow_html=True)
+        #st.table(data)
+
         st.markdown("---")
 
         # チャットボタン設定
@@ -212,25 +236,24 @@ if "user_id" in st.session_state:
                     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     user_message = messages.chat_message("user")
                     original_prompt = prompt
-                    nobasi = False
-                    nobasi_count = 0
-                    if "ー" in prompt:
-                        nobasi = list(prompt)
-                        for i in nobasi:
-                            print(i)
-                            if i == "ー":
-                                nobasi_count += 1
-                        prompt = prompt.replace("ー", "")
-                        print(prompt)
-                        nobasi = True
-                    if "死ね" in prompt or "しね" in prompt or "シネ" in prompt or "4ね" in prompt or "４ね" in prompt or "馬鹿" in prompt or "ばか" in prompt or "baka" in prompt or "バカ" in prompt or "あほ" in prompt in prompt or "sine" in prompt or "shine" in prompt or "アホ" in prompt or "きえろ" in prompt or "消えろ" in prompt or "キエロ" in prompt or "ボケ" in prompt or "ぼけ" in prompt or "まぬけ" in prompt or "間抜け" in prompt or "aho" in prompt or "kiero" in prompt in prompt or "boke" in prompt or "manuke" in prompt or "くそ" in prompt or "糞" in prompt or "クソ" in prompt or "kuso" in prompt or "がき" in prompt or "ガキ" in prompt or "餓鬼" in prompt or "gaki" in prompt or "ぶす" in prompt or "ブス" in prompt or "busu" in prompt or "殺す" in prompt or "ころす" in prompt or "コロス" in prompt or "korosu" in prompt or "かす" in prompt or "カス" in prompt or "stupid" in prompt or "fuck" in prompt or "きも" in prompt or "キモ" in prompt:
-                        prompt = prompt.replace("死ね", "**").replace("しね", "**").replace("シネ", "**").replace("4ね", "**").replace("４ね", "**").replace("馬鹿", "**").replace("ばか", "**").replace("baka", "****").replace("sine", "****").replace("shine", "****").replace("バカ", "**").replace("あほ", "**").replace("アホ", "**").replace("きえろ", "***").replace("消えろ", "***").replace("キエロ", "***").replace("ボケ", "**").replace("ぼけ", "**").replace("まぬけ", "***").replace("間抜け", "***").replace("aho", "***").replace("kiero", "*****").replace("boke", "****").replace("manuke", "******").replace("くそ", "**").replace("糞", "*").replace("クソ", "**").replace("kuso", "****").replace("がき", "**").replace("ガキ", "**").replace("餓鬼", "**").replace("gaki", "****").replace("busu", "****").replace("ブス", "**").replace("ぶす", "**").replace("殺す", "**").replace("ころす", "***").replace("コロス", "***").replace("korosu", "******").replace("かす", "**").replace("カス", "**").replace("stupid", "******").replace("fuck", "****").replace("stupid", "**").replace("きも", "**").replace("キモ", "**")
-                        if nobasi:
-                            asu =  "*" * nobasi_count
-                            prompt += asu
-                    else:
-                        if nobasi == True:
-                            prompt = original_prompt
+                    
+                    # NGリスト
+                    NG_WORDS = [
+                        "死ね", "しね", "シネ", "4ね", "４ね", "馬鹿", "ばか", "baka", "バカ", "あほ", "アホ", 
+                        "きえろ", "消えろ", "キエロ", "ボケ", "ぼけ", "まぬけ", "間抜け", "aho", "kiero", 
+                        "boke", "manuke", "くそ", "糞", "クソ", "kuso", "がき", "ガキ", "餓鬼", "gaki", "ぶす", 
+                        "ブス", "busu", "殺す", "ころす", "コロス", "korosu", "かす", "カス", "stupid", 
+                        "fuck", "きも", "キモ"
+                    ]
+
+                    # NG設定
+                    for word in NG_WORDS:
+                        if word in prompt.replace("ー", ""):
+                            pattern = word[0] + r"[ー]*" + word[1:]
+                            prompt = re.sub(pattern, "＊" * len(word), prompt)
+
+
+                    # 送信したメッセージを表示
                     user_message.write(f"{nickname}: {prompt}")
                     user_message.caption(current_time)
 
@@ -254,10 +277,13 @@ if "user_id" in st.session_state:
                     total_amount = item.get("total_amount", 0)
                     if category_id != 1: # 収入(category_id=1)以外のデータをリストに保存する
                         data[category_name] = total_amount
-                    
+                item_list = list(data.values())
+                if sum(item_list) == 0:
+                    st.write("支出登録をするとグラフが表示されます")
+                else:
                 # Pie インスタンスを作成してグラフを表示
-                pie = Pie()
-                pie.create_chart(data, height=300)
+                    pie = Pie()
+                    pie.create_chart(data, height=300)
     
             col_6, col_7, col_8 = st.columns([6, 3, 5]) # ボタンの位置設定
             with col_7 :
@@ -313,6 +339,8 @@ if "user_id" in st.session_state:
                         message.error("金額を入力してください")
                     elif amount > 1500000000:
                         message.error("最大15億円まで入力可能です。")
+                    elif amount == 0:
+                        message.error("最大15億円まで入力可能です。")
                     elif selected_category_id is None:
                         message.error("カテゴリを入力してください")
                     else: # 登録
@@ -367,22 +395,58 @@ if "user_id" in st.session_state:
 
         # 収入入力可・不可のフィルター設定
         if income_input:
-            data = {
+            data1 = {
             "ユーザー": users,
             "収入": income,
             "支出": expense,
             "収支": total,
             }
         else:
-            data = {
+            data1 = {
             "ユーザー": users,
             "支出": expense,
             }
 
         # DataFrame に変換
-        df = pd.DataFrame(data)
-        st.table(df)
+        df = pd.DataFrame(data1)
+        table_html1 = """
+        <style>
+            .custom-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .custom-table td, .custom-table th {
+                padding: 8px;
+                text-align: left;
+                border: none !important;  /* 完全にボーダーを削除 */
+                background: transparent;  /* 背景透明 */
+            }
+            .custom-table tr {
+                border: none !important;
+            }
+
+        </style>
+        <div class="outer-container">
+            <table class="custom-table">
+                <tr><th>ユーザー</th>"""
+        if income_input:
+            table_html1 += "<th>収入</th><th>支出</th><th>収支</th></tr>"
+        else:
+            table_html1 += "<th>支出</th></tr>"
         
+        table_html1 += """<tr class="separator-row"><td colspan="4"><hr/></td></tr>"""
+
+        for i in range(len(users)):
+            table_html1 += f"<tr><td>{users[i]}</td>"
+            if income_input:
+                table_html1 += f"<td>{income[i]}</td><td>{expense[i]}</td><td>{total[i]}</td></tr>"
+            else:
+                table_html1 += f"<td>{expense[i]}</td></tr>"
+
+        table_html1 += "</table></div>"
+
+        st.markdown(table_html1, unsafe_allow_html=True)
+
     with colD:
         pass
     

@@ -55,7 +55,6 @@ with col_1:
 with col_2:
     with st.form(key="detail"):
         message = st.empty() # メッセージを表示する
-        # ラベルをHTMLで手動で追加
         # 日付
         update_date = datetime.datetime.strptime(update_date, "%Y-%m-%d").date()
         date = st.date_input(label="日付", value=update_date)
